@@ -50,7 +50,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
         <div id="dropZone" class="drop" tabindex="0" role="button" aria-label="Drop polygon files or click to upload">
           <div class="drop-icon">⬇️</div>
           <div class="drop-title">Drop files here or click to choose</div>
-          <div class="drop-sub">Use <strong>KML, GML, GeoJSON/JSON, or SHP</strong> for checking. Other files are accepted but clearly marked unsupported.</div>
+          <div class="drop-sub">Use <strong>KML, KMZ, GML, GeoJSON/JSON, SHP, or zipped SHP</strong> for checking. Other files are accepted but clearly marked unsupported.</div>
         </div>
         <input id="fileInput" class="hidden" type="file" multiple accept="*/*" />
         <div class="simple-note">
@@ -83,7 +83,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
           <section class="stats">
             <div id="vertexStat" class="stat"><div class="stat-label">Combined vertices</div><div class="stat-value">—</div><div class="stat-note">Limit: under 100</div></div>
             <div id="polygonStat" class="stat"><div class="stat-label">Individual polygons</div><div class="stat-value">—</div><div class="stat-note">Limit: 10 or fewer</div></div>
-            <div id="formatStat" class="stat"><div class="stat-label">Supported files</div><div class="stat-value">—</div><div class="stat-note">KML, GML, GeoJSON, SHP</div></div>
+            <div id="formatStat" class="stat"><div class="stat-label">Supported files</div><div class="stat-value">—</div><div class="stat-note">KML, KMZ, GML, GeoJSON, SHP/ZIP</div></div>
             <div id="simplifiedStat" class="stat"><div class="stat-label">Simplified vertices</div><div class="stat-value">—</div><div class="stat-note">Only after fixing</div></div>
           </section>
         </div>
@@ -172,6 +172,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
 </div>
 <div id="toast" class="toast"></div>
 
+<script defer src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
 <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onload="if (window.render) window.render()" onerror="console.warn('Map library unavailable; using built-in shape preview.')"></script>
 <script>
 'use strict';
@@ -179,7 +180,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
 const LIMIT_VERTICES = 100;
 const TARGET_SIMPLIFIED_VERTICES = 99;
 const LIMIT_POLYGONS = 10;
-const SUPPORTED_EXTS = new Set(['kml','gml','geojson','json','shp']);
+const SUPPORTED_EXTS = new Set(['kml','kmz','gml','geojson','json','shp','zip']);
 
 const state = {
   files: [],
@@ -425,6 +426,68 @@ function parseShp(buffer, filename){
   return polygons;
 }
 
+
+function requireZipLibrary(){
+  if (!window.fflate || !window.fflate.unzipSync) {
+    throw new Error('ZIP/KMZ support could not load. Check your internet connection and reload this page.');
+  }
+}
+function uint8ToText(bytes){
+  return new TextDecoder('utf-8').decode(bytes);
+}
+function bytesToArrayBuffer(bytes){
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+}
+function zipEntriesFromBuffer(buffer){
+  requireZipLibrary();
+  return window.fflate.unzipSync(new Uint8Array(buffer));
+}
+function parseZipLike(buffer, filename, preferredMode){
+  const entries = zipEntriesFromBuffer(buffer);
+  const names = Object.keys(entries).filter(name => !name.endsWith('/'));
+  const polygons = [];
+  function parseEntry(name){
+    const lower = name.toLowerCase();
+    const base = `${filename} / ${name}`;
+    const bytes = entries[name];
+    if (lower.endsWith('.kml')) return parseKml(uint8ToText(bytes), base).map(p => ({...p, format: preferredMode === 'KMZ' ? 'KMZ/KML' : 'ZIP/KML'}));
+    if (lower.endsWith('.gml') || lower.endsWith('.xml')) return parseGml(uint8ToText(bytes), base).map(p => ({...p, format: 'ZIP/GML'}));
+    if (lower.endsWith('.geojson') || lower.endsWith('.json')) return parseGeoJson(uint8ToText(bytes), base).map(p => ({...p, format: 'ZIP/GeoJSON'}));
+    if (lower.endsWith('.shp')) return parseShp(bytesToArrayBuffer(bytes), base).map(p => ({...p, format: 'ZIP/SHP'}));
+    return [];
+  }
+  let parseNames = [];
+  if (preferredMode === 'KMZ'){
+    parseNames = names.filter(n => n.toLowerCase().endsWith('.kml'));
+    parseNames.sort((a,b) => {
+      const ad = a.toLowerCase().endsWith('doc.kml') ? 0 : 1;
+      const bd = b.toLowerCase().endsWith('doc.kml') ? 0 : 1;
+      return ad - bd || a.localeCompare(b);
+    });
+  } else {
+    parseNames = names.filter(n => /\.(kml|gml|xml|geojson|json|shp)$/i.test(n));
+  }
+  const errors = [];
+  for (const name of parseNames){
+    try {
+      polygons.push(...parseEntry(name));
+    } catch (err){
+      errors.push(`${name}: ${err?.message || 'could not read'}`);
+    }
+  }
+  if (!polygons.length){
+    if (preferredMode === 'KMZ') throw new Error(errors.length ? `KMZ opened, but no usable polygon KML was found. ${errors[0]}` : 'KMZ opened, but no KML polygon file was found inside it.');
+    throw new Error(errors.length ? `ZIP opened, but no usable polygon file was found. ${errors[0]}` : 'ZIP opened, but no KML, GML, GeoJSON, or SHP polygon file was found inside it.');
+  }
+  return polygons;
+}
+function parseKmz(buffer, filename){
+  return parseZipLike(buffer, filename, 'KMZ');
+}
+function parseZip(buffer, filename){
+  return parseZipLike(buffer, filename, 'ZIP');
+}
+
 function tryGenericConversion(text, filename){
   const trimmed = String(text || '').trim();
   if (!trimmed) throw new Error('This file is empty or binary, so it cannot be converted here.');
@@ -480,6 +543,8 @@ async function processFiles(files){
     try {
       let polygons = [];
       if (ext === 'shp') polygons = parseShp(await readFileBuffer(file), file.name);
+      else if (ext === 'kmz') polygons = parseKmz(await readFileBuffer(file), file.name);
+      else if (ext === 'zip') polygons = parseZip(await readFileBuffer(file), file.name);
       else {
         const text = await readFileText(file);
         if (ext === 'kml') polygons = parseKml(text, file.name);
@@ -488,7 +553,7 @@ async function processFiles(files){
         else {
           record.supported = false;
           record.status = 'unsupported';
-          record.message = 'This is not KML, GML, GeoJSON/JSON, or SHP. You can try converting it to KML, but conversion may fail if the coordinates are not readable text.';
+          record.message = 'This standalone checker cannot read this file type directly. Upload KML, KMZ, GML, GeoJSON/JSON, SHP, or a zipped shapefile.';
           record.rawText = text;
           rebuildPolygonsFromFiles();
           render();
@@ -719,7 +784,7 @@ function renderVerdict(){
     els.verdict.className = 'verdict fail';
     els.verdict.querySelector('.verdict-badge').textContent = '!';
     els.verdict.querySelector('.verdict-title').textContent = 'No usable polygons found';
-    els.verdict.querySelector('.verdict-text').textContent = 'Use KML, GML, GeoJSON/JSON, or polygon SHP files. Unsupported files can be tried through the per-file convert button.';
+    els.verdict.querySelector('.verdict-text').textContent = 'Use KML, KMZ, GML, GeoJSON/JSON, SHP, or zipped SHP files.';
   }
 }
 function renderStats(){
@@ -731,7 +796,7 @@ function renderStats(){
   renderStat(els.vertexStat, state.files.length ? String(v) : '—', state.files.length ? (v < LIMIT_VERTICES ? 'OK: below 100' : 'Bad: 100 or more') : 'Limit: under 100', state.files.length ? (v < LIMIT_VERTICES ? 'good' : 'bad') : '');
   renderStat(els.polygonStat, state.files.length ? String(p) : '—', state.files.length ? (p <= LIMIT_POLYGONS ? 'OK: 10 or fewer' : 'Bad: more than 10') : 'Limit: 10 or fewer', state.files.length ? (p <= LIMIT_POLYGONS ? 'good' : 'bad') : '');
   const formatClass = errors || unsupported ? 'warn' : (state.files.length ? 'good' : '');
-  renderStat(els.formatStat, state.files.length ? `${supportedOk}/${state.files.length}` : '—', state.files.length ? `${unsupported} unsupported, ${errors} error${errors===1?'':'s'}` : 'KML, GML, GeoJSON, SHP', formatClass);
+  renderStat(els.formatStat, state.files.length ? `${supportedOk}/${state.files.length}` : '—', state.files.length ? `${unsupported} unsupported, ${errors} error${errors===1?'':'s'}` : 'KML, KMZ, GML, GeoJSON, SHP/ZIP', formatClass);
   const sv = totalVertices(state.simplifiedPolygons);
   renderStat(els.simplifiedStat, state.simplifiedPolygons.length ? String(sv) : '—', state.simplifiedPolygons.length ? (sv < LIMIT_VERTICES ? 'Simplified copy is under 100' : 'Still 100 or more') : 'Created only if requested', state.simplifiedPolygons.length ? (sv < LIMIT_VERTICES ? 'good' : 'bad') : '');
 }
@@ -743,7 +808,7 @@ function renderMessages(){
     if (p > LIMIT_POLYGONS) messages.push(`<div class="message bad big-message"><strong>Polygon fail:</strong> ${p} individual polygons. AusAlert allows 10 or fewer.</div>`);
     if (v < LIMIT_VERTICES && p <= LIMIT_POLYGONS) messages.push(`<div class="message good big-message"><strong>Pass:</strong> the checked polygons are inside both limits.</div>`);
   }
-  if (state.files.some(f => f.status === 'unsupported')) messages.push(`<div class="message warn"><strong>Unsupported file present:</strong> it is not KML, GML, GeoJSON, or SHP. Click its "Try convert to KML" button in the file list if you want to try converting it.</div>`);
+  if (state.files.some(f => f.status === 'unsupported')) messages.push(`<div class="message warn"><strong>Unsupported file present:</strong> this file type cannot be checked by this standalone tool. Upload KML, KMZ, GML, GeoJSON/JSON, SHP, or zipped SHP.</div>`);
   if (state.files.some(f => f.status === 'converted')) messages.push(`<div class="message warn"><strong>Converted file present:</strong> conversion is experimental. Export and check the result before AusAlert use.</div>`);
   els.limitMessages.innerHTML = messages.join('');
 }
@@ -755,18 +820,18 @@ function fileCardsHtml({allowRemove=false, compactUpload=false}={}){
     const statusClass = file.status === 'ok' || file.status === 'converted' ? 'ok' : (file.status === 'unsupported' ? 'warn' : 'bad');
     const cardClass = file.status === 'unsupported' || file.status === 'converted' ? ' unsupported' : (file.status === 'error' ? ' error' : '');
     const statusText = file.status === 'ok' ? 'SUPPORTED' : file.status === 'converted' ? 'CONVERTED' : file.status === 'unsupported' ? 'UNSUPPORTED' : file.status === 'loading' ? 'READING' : 'ERROR';
-    const convertButton = file.status === 'unsupported' ? `<button class="warning" onclick="convertUnsupported(${index})">Try convert to KML</button>` : '';
+    const convertButton = '';
     const removeButton = allowRemove ? `<button class="remove-file-btn" onclick="removeFile(${index})">Remove</button>` : '';
     const conversionError = file.convertAttempt ? `<div class="message bad">${escapeHtml(file.convertAttempt)}</div>` : '';
     if (compactUpload){
       const message = file.status === 'loading'
         ? 'Reading file…'
         : file.status === 'unsupported'
-          ? 'This format is not KML, GML, GeoJSON/JSON, or SHP. Convert it before checking.'
+          ? 'This file type cannot be checked directly here. Upload KML, KMZ, GML, GeoJSON/JSON, SHP, or zipped SHP.'
           : file.status === 'error'
             ? (file.message || 'Could not read this file.')
             : file.status === 'converted'
-              ? 'Converted experimentally. Check carefully after export.'
+              ? ''
               : '';
       return `<div class="file-card upload-compact${cardClass}">
         <div class="upload-file-main"><div class="file-name">${escapeHtml(file.name)}</div><div class="file-meta">.${escapeHtml(file.ext)} · ${formatBytes(file.size)}</div></div>
