@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AusAlert Polygon Limit Checker</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+:root{
+  --bg:#f4f6f8;--panel:#fff;--ink:#1f2933;--muted:#5f6b76;--line:#d8dde3;--soft:#eef2f6;
+  --blue:#1664d6;--blue2:#eaf2ff;--red:#b42318;--red2:#fdecea;--green:#15803d;--green2:#e9f7ef;
+  --orange:#d97706;--orange2:#fff4df;--shadow:0 2px 8px rgba(15,23,42,.08);--radius:16px;
+}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg);font-size:15px}button,select,input{font:inherit}
+button{min-height:44px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:0 16px;cursor:pointer;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}button:hover{background:#fafafa}button:disabled{opacity:.42;cursor:not-allowed}.primary{background:var(--blue2);border-color:#cfe0ff;color:#0f4fae}.warning{background:var(--orange2);border-color:#f4d39b;color:#9a5400}.danger{background:var(--red2);border-color:#efb9b4;color:var(--red)}.good{background:var(--green2);border-color:#bde5c8;color:var(--green)}
+.hidden{display:none!important}.strong{font-weight:900}.hint,.fineprint{color:var(--muted);line-height:1.45}.fineprint{font-size:12px}.app{min-height:100vh}.topbar{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.06);padding:10px 18px;display:flex;align-items:center;gap:12px}.title{font-size:18px;font-weight:950;line-height:1.05}.title small{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-top:3px}.spacer{flex:1}.legend{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:12px}.swatch{width:18px;height:10px;border-radius:999px;border:2px solid}.swatch.original{background:rgba(22,100,214,.10);border-color:#1664d6}.swatch.simple{background:rgba(217,44,50,.10);border-color:#d92c32}
+.wizard{max-width:1180px;margin:0 auto;padding:18px}.intro{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:14px}.intro h1{margin:0 0 6px;font-size:28px}.intro p{margin:0;color:var(--muted);font-size:16px}.flow-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:16px}.flow-item{border:1px solid var(--line);background:#fbfcfd;border-radius:14px;padding:12px;min-height:92px}.flow-num{width:30px;height:30px;border-radius:999px;background:var(--blue2);color:#0f4fae;display:flex;align-items:center;justify-content:center;font-weight:950}.flow-label{font-weight:950;margin-top:8px}.flow-help{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.3}
+.step{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}.step-head{display:flex;align-items:center;gap:12px;padding:14px 16px;background:#fbfcfd;border-bottom:1px solid var(--soft)}.step-head-main{display:flex;align-items:center;gap:12px;flex:1}.step-head-actions{margin-left:auto;display:flex;gap:8px;align-items:center}.back-btn{min-height:38px;border-radius:10px;background:#fff;color:#334155}.back-btn:hover{background:#f8fafc}.step-num{width:38px;height:38px;border-radius:999px;background:var(--blue2);color:#0f4fae;display:flex;align-items:center;justify-content:center;font-weight:950;font-size:18px;flex:0 0 auto}.step-title{font-size:20px;font-weight:950}.step-subtitle{font-size:13px;color:var(--muted);margin-top:2px}.step-body{padding:16px}.drop{border:3px dashed #b9c7dd;border-radius:18px;background:#f9fbff;min-height:230px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;cursor:pointer;transition:.12s ease;padding:22px}.drop:hover,.drop.dragover{background:#eaf2ff;border-color:var(--blue);transform:translateY(-1px)}.drop-icon{font-size:54px}.drop-title{font-size:26px;font-weight:950}.drop-sub{max-width:520px;color:var(--muted);line-height:1.42}.simple-note{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.note-tile{background:#fbfcfd;border:1px solid var(--soft);border-radius:14px;padding:12px;color:var(--muted);line-height:1.35}.note-tile strong{color:var(--ink)}
+.answer-grid{display:grid;grid-template-columns:1fr 1.3fr;gap:14px}.verdict{display:flex;align-items:flex-start;gap:14px;border:2px solid var(--line);background:#fff;border-radius:16px;padding:18px;min-height:132px}.verdict-badge{width:58px;height:58px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:950;flex:0 0 auto}.verdict.pass{border-color:#bde5c8;background:linear-gradient(0deg,var(--green2),#fff)}.verdict.fail{border-color:#efb9b4;background:linear-gradient(0deg,var(--red2),#fff)}.verdict.wait{border-color:#cfe0ff;background:linear-gradient(0deg,var(--blue2),#fff)}.verdict.pass .verdict-badge{background:var(--green);color:#fff}.verdict.fail .verdict-badge{background:var(--red);color:#fff}.verdict.wait .verdict-badge{background:var(--blue);color:#fff}.verdict-title{font-size:24px;font-weight:950}.verdict-text{font-size:15px;color:var(--muted);line-height:1.4;margin-top:5px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}.stat-label{text-transform:uppercase;letter-spacing:.05em;font-size:11px;color:var(--muted);font-weight:950}.stat-value{font-size:34px;font-weight:950;margin-top:4px}.stat-note{font-size:13px;color:var(--muted);line-height:1.3}.stat.good{border-color:#bde5c8;background:var(--green2)}.stat.bad{border-color:#efb9b4;background:var(--red2)}.stat.warn{border-color:#f4d39b;background:var(--orange2)}.message{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:10px;line-height:1.4}.message.bad{background:var(--red2);border-color:#efb9b4;color:#7f1d1d}.message.good{background:var(--green2);border-color:#bde5c8;color:#14532d}.message.warn{background:var(--orange2);border-color:#f4d39b;color:#7a4300}.big-message{font-size:16px;font-weight:650}
+.files{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}.file-card{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}.file-card.unsupported{border-color:#f2c98d}.file-card.error{border-color:#efb9b4}.file-top{display:flex;gap:8px;align-items:flex-start;padding:10px 12px;background:#fbfcfd;border-bottom:1px solid var(--soft)}.file-name{font-weight:950;word-break:break-word}.file-meta{font-size:12px;color:var(--muted);margin-top:2px}.file-status{margin-left:auto;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:950;border:1px solid var(--line);background:#fff}.file-status.ok{background:var(--green2);border-color:#bde5c8;color:var(--green)}.file-status.bad{background:var(--red2);border-color:#efb9b4;color:var(--red)}.file-status.warn{background:var(--orange2);border-color:#f4d39b;color:#9a5400}.file-body{padding:10px 12px}.mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.mini{border:1px solid var(--soft);border-radius:10px;padding:8px}.mini-label{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:950;letter-spacing:.05em}.mini-value{font-size:20px;font-weight:950}.file-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.file-actions button{min-height:34px;font-size:12px}.remove-file-btn{background:#fff;border-color:#e2e8f0;color:#64748b}.remove-file-btn:hover{background:#f8fafc;color:#b42318}
+.upload-panel .files{display:flex;flex-direction:column;gap:8px}.upload-compact{display:grid;grid-template-columns:minmax(0,1fr) 118px 118px auto;align-items:center;gap:10px;padding:10px 12px;border-radius:12px}.upload-compact .upload-file-main{min-width:0}.upload-compact .file-name{font-size:16px;line-height:1.2}.upload-compact .file-meta{font-size:12px}.upload-compact .mini-grid{display:contents}.upload-compact .mini{padding:7px 9px;background:#fbfcfd}.upload-compact .mini-label{font-size:9px}.upload-compact .mini-value{font-size:21px;line-height:1.05}.upload-compact .file-actions{margin:0;justify-content:flex-end}.upload-compact .file-actions button{min-height:34px}.upload-compact .upload-message{grid-column:1/-1;margin-top:-2px;font-size:12px;color:var(--muted)}.upload-compact.unsupported .upload-message{color:#7a4300}.upload-compact.error .upload-message{color:#7f1d1d}.next-btn.ready{background:var(--red);border-color:#8a1b14;color:#fff;box-shadow:0 2px 10px rgba(180,35,24,.20)}.next-btn.ready:hover{background:#9f1f17}.next-btn.flash{animation:nextButtonPulse 1.15s ease-in-out 2}@keyframes nextButtonPulse{0%,100%{transform:none;box-shadow:0 2px 10px rgba(180,35,24,.20)}45%{transform:scale(1.035);box-shadow:0 0 0 7px rgba(180,35,24,.18),0 7px 22px rgba(180,35,24,.30)}}.progress-cta{position:relative;font-weight:900;transition:transform .15s ease,box-shadow .15s ease}.progress-cta:not(:disabled){animation:ctaAttention 1.55s ease-in-out infinite}.progress-cta:not(:disabled):hover{transform:translateY(-1px)}.progress-cta-danger:not(:disabled){box-shadow:0 2px 10px rgba(180,35,24,.20)}.progress-cta-warning:not(:disabled){box-shadow:0 2px 10px rgba(180,83,9,.18)}.progress-cta.is-idle{animation:none!important;box-shadow:none!important}.progress-cta:disabled{animation:none!important}.progress-cta-warning:not(:disabled){background:#b45309;border-color:#92400e;color:#fff}.progress-cta-warning:not(:disabled):hover{background:#9a4708}.progress-cta-danger:not(:disabled){background:var(--red);border-color:#8a1b14;color:#fff}.progress-cta-danger:not(:disabled):hover{background:#9f1f17}@keyframes ctaAttention{0%,100%{transform:none}50%{transform:scale(1.028);box-shadow:0 0 0 7px rgba(180,35,24,.14),0 10px 24px rgba(15,23,42,.16)}}
+.action-box{border:2px dashed #e2c58d;background:#fffdf6;border-radius:18px;padding:18px;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}.action-title{font-size:21px;font-weight:950}.action-text{color:var(--muted);line-height:1.45;margin-top:4px}.big-action{min-height:58px;font-size:18px;padding:0 24px;border-radius:16px}.export-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.export-row button{min-height:52px}.upload-panel{margin-top:14px;border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}.upload-panel-head{padding:12px 14px;background:#fbfcfd;border-bottom:1px solid var(--soft);display:flex;align-items:center;justify-content:space-between;gap:10px}.upload-panel-title{font-weight:950;font-size:18px}.upload-panel-body{padding:14px}.step-actions{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}.next-btn{min-height:54px;font-size:17px;padding:0 22px}.final-download-area{margin-top:16px;display:flex;align-items:center;justify-content:flex-start}.final-download-panel{width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border:1px solid #bde5c8;background:#f0fdf4;border-radius:16px;padding:14px 16px}.final-download-copy{color:#14532d;line-height:1.35}.final-download-copy strong{display:block;font-size:17px;color:#14532d}.final-kml-button{min-height:52px!important;padding:0 22px!important;border-radius:12px!important;font-size:16px!important;font-weight:900!important;background:#15803d!important;border-color:#166534!important;color:#fff!important;box-shadow:0 2px 8px rgba(21,128,61,.16);letter-spacing:0}.final-kml-button:hover{background:#166534!important;transform:none}.simplified-only{display:none}.has-simplified .simplified-only{display:inline-flex}.has-simplified-block{display:none}.has-simplified .has-simplified-block{display:block}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.preview-card{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}.preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:#fbfcfd;border-bottom:1px solid var(--soft)}.preview-title{font-size:18px;font-weight:950}.preview-meta{font-size:13px;color:var(--muted)}.svg-wrap{height:430px;background:linear-gradient(45deg,#fafafa 25%,transparent 25%),linear-gradient(-45deg,#fafafa 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#fafafa 75%),linear-gradient(-45deg,transparent 75%,#fafafa 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0;display:flex;align-items:center;justify-content:center}.svg-wrap svg{width:100%;height:100%;display:block}.empty-preview{color:var(--muted);text-align:center;padding:20px;line-height:1.4}
+.table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}.table th,.table td{text-align:left;border-bottom:1px solid var(--soft);padding:10px;font-size:13px}.table th{background:#fbfcfd;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.03em}.table tr:last-child td{border-bottom:0}.status-pill{display:inline-flex;align-items:center;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:950}.status-pill.good{background:var(--green2);color:var(--green)}.status-pill.bad{background:var(--red2);color:var(--red)}.status-pill.warn{background:var(--orange2);color:#9a5400}.details-toggle{margin-top:8px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:99}.modal-backdrop.active{display:flex}.modal{width:min(620px,100%);border-radius:18px;background:#fff;box-shadow:0 22px 70px rgba(0,0,0,.32);border:1px solid var(--line);overflow:hidden}.modal-head{padding:16px 18px;border-bottom:1px solid var(--soft);font-weight:950;font-size:22px}.modal-body{padding:18px;font-size:16px;line-height:1.5}.modal-actions{display:flex;gap:10px;justify-content:flex-end;padding:14px 18px;border-top:1px solid var(--soft);background:#fbfcfd}.toast{position:fixed;right:16px;bottom:16px;max-width:min(460px,calc(100vw - 32px));background:#1f2933;color:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:none;z-index:100;line-height:1.35}.toast.active{display:block}
+@media(max-width:980px){.flow-strip{grid-template-columns:1fr}.answer-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.compare-grid{grid-template-columns:1fr}.svg-wrap{height:340px}.action-box{grid-template-columns:1fr}.legend{display:none}.simple-note{grid-template-columns:1fr}}
+@media(max-width:560px){.wizard{padding:10px}.topbar{position:static;align-items:flex-start}.step-head{align-items:flex-start}.step-head-actions{width:100%;margin-left:0;justify-content:flex-start}.stats{grid-template-columns:1fr}.intro h1{font-size:24px}.drop{min-height:190px}.drop-title{font-size:22px}.verdict-title{font-size:21px}.verdict{padding:14px}.modal-actions{flex-direction:column}.modal-actions button{width:100%}.export-row button{width:100%}}
+
+.step[hidden]{display:none!important}.topbar .legend{display:none}.wizard{max-width:1120px}.step{animation:stepIn .14s ease-out}@keyframes stepIn{from{opacity:.2;transform:translateY(6px)}to{opacity:1;transform:none}}
+.map-card{border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden;margin-top:14px}.map-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;background:#fbfcfd;border-bottom:1px solid var(--soft)}.map-title{font-size:18px;font-weight:950}.map-meta{font-size:13px;color:var(--muted)}.map-wrap{height:430px;min-height:430px;background:#eef2f6;position:relative;display:flex;align-items:center;justify-content:center}.map-wrap .leaflet-container,.map-wrap.leaflet-container{height:100%;width:100%}.map-wrap svg{width:100%;height:100%;display:block}.map-wrap .leaflet-container{background:#dbe4ea}.map-wrap .leaflet-control-attribution{font-size:10px;line-height:1.15;padding:2px 5px}.map-wrap .leaflet-control-attribution img,.map-wrap .leaflet-control-attribution .leaflet-attribution-flag{width:14px!important;height:9px!important;max-width:14px!important;max-height:9px!important;display:inline-block!important;vertical-align:-1px!important;margin-right:3px!important}.map-label{font-size:11px;font-weight:800;color:#64748b;text-shadow:0 1px 2px rgba(255,255,255,.95);white-space:nowrap;pointer-events:none}.neutral-map-note{display:none}.format-warning{border:2px solid #f4d39b;background:var(--orange2);border-radius:16px;padding:14px;margin-top:12px;color:#7a4300}.next-action{border:3px solid var(--red);background:var(--red2);border-radius:18px;padding:16px;margin-top:14px;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}.next-action.good{border-color:var(--green);background:var(--green2)}.next-title{font-size:22px;font-weight:950}.next-text{margin-top:4px;color:var(--muted);line-height:1.4}.next-action.good .next-text{color:#14532d}.fix-panel{border:2px dashed #e2c58d;background:#fffdf6;border-radius:18px;padding:18px}.fix-panel.cannot{border-color:#efb9b4;background:var(--red2)}.fix-title{font-size:24px;font-weight:950}.fix-text{font-size:16px;color:var(--muted);line-height:1.45;margin-top:6px}.details-box{margin-top:14px;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}.details-box summary{cursor:pointer;font-weight:900;padding:12px 14px;background:#fbfcfd}.details-box>div{padding:12px}.upload-only-note{margin-top:14px;text-align:center;color:var(--muted);font-size:13px}
+@media(max-width:900px){.answer-grid,.compare-grid,.next-action,.action-box{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.map-wrap{height:340px}.topbar{position:static;flex-wrap:wrap}.title{width:100%}}
+@media(max-width:620px){.wizard{padding:10px}.stats,.simple-note{grid-template-columns:1fr}.verdict{flex-direction:column}.drop-title{font-size:22px}.big-action{width:100%}.map-wrap{height:300px}.upload-compact{grid-template-columns:1fr 1fr}.upload-compact .upload-file-main{grid-column:1/-1}.upload-compact .file-actions{grid-column:1/-1;justify-content:flex-start}.upload-compact .file-actions button{flex:1}}
+
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="title">AusAlert Polygon Limit Checker<small>Step by step. Only what is needed.</small></div>
+    <div class="spacer"></div>
+    <div class="legend"><span class="swatch original"></span>Original <span class="swatch simple"></span>Simplified</div>
+    <button id="clearBtn">Clear / Start again</button>
+  </header>
+
+  <main class="wizard">
+    <section id="step1" class="step">
+      <div class="step-head"><div class="step-head-main"><span class="step-num">1</span><div><div class="step-title">Upload polygon file(s)</div><div class="step-subtitle">Add one or more polygon files. Check the list, then click Next.</div></div></div></div>
+      <div class="step-body">
+        <div id="dropZone" class="drop" tabindex="0" role="button" aria-label="Drop polygon files or click to upload">
+          <div class="drop-icon">⬇️</div>
+          <div class="drop-title">Drop files here or click to choose</div>
+          <div class="drop-sub">Use <strong>KML, GML, GeoJSON/JSON, or SHP</strong> for checking. Other files are accepted but clearly marked unsupported.</div>
+        </div>
+        <input id="fileInput" class="hidden" type="file" multiple accept="*/*" />
+        <div class="simple-note">
+          <div class="note-tile"><strong>Vertex rule:</strong> combined vertices must be <strong>under 100</strong>.</div>
+          <div class="note-tile"><strong>Polygon rule:</strong> up to <strong>10</strong> individual polygons is okay.</div>
+          <div class="note-tile"><strong>Bad:</strong> <strong>100+</strong> vertices or <strong>more than 10</strong> polygons.</div>
+        </div>
+        <div id="uploadPanel" class="upload-panel hidden">
+          <div class="upload-panel-head"><div class="upload-panel-title">Uploaded files</div><div id="uploadCount" class="hint">0 files</div></div>
+          <div class="upload-panel-body">
+            <div id="uploadFileList" class="files"><div class="hint">No files added yet.</div></div>
+            <div class="step-actions">
+              <button id="addMoreBtn">Add more files</button>
+              <button id="goResultsBtn" class="primary next-btn progress-cta progress-cta-danger" disabled>Next: check limits →</button>
+            </div>
+          </div>
+        </div>
+        <div class="upload-only-note">Only this upload step appears first. Add all required files, then continue.</div>
+      </div>
+    </section>
+
+    <section id="step2" class="step" hidden>
+      <div class="step-head"><div class="step-head-main"><span class="step-num">2</span><div><div class="step-title">Check the answer</div><div class="step-subtitle">The polygon is shown on the map. Green means it is inside the AusAlert limits. Red means it needs fixing.</div></div></div><div class="step-head-actions"><button id="backToUploadBtn" class="back-btn">← Back</button></div></div>
+      <div class="step-body">
+        <div class="answer-grid">
+          <div id="verdict" class="verdict wait">
+            <div class="verdict-badge">?</div>
+            <div><div class="verdict-title">Waiting for files</div><div class="verdict-text">Drop polygon files into Step 1.</div></div>
+          </div>
+          <section class="stats">
+            <div id="vertexStat" class="stat"><div class="stat-label">Combined vertices</div><div class="stat-value">—</div><div class="stat-note">Limit: under 100</div></div>
+            <div id="polygonStat" class="stat"><div class="stat-label">Individual polygons</div><div class="stat-value">—</div><div class="stat-note">Limit: 10 or fewer</div></div>
+            <div id="formatStat" class="stat"><div class="stat-label">Supported files</div><div class="stat-value">—</div><div class="stat-note">KML, GML, GeoJSON, SHP</div></div>
+            <div id="simplifiedStat" class="stat"><div class="stat-label">Simplified vertices</div><div class="stat-value">—</div><div class="stat-note">Only after fixing</div></div>
+          </section>
+        </div>
+
+        <div id="limitMessages"></div>
+
+        <div id="nextActionBox" class="next-action hidden">
+          <div><div class="next-title">This needs fixing before AusAlert</div><div id="nextActionText" class="next-text">Click the big button to fix it now.</div></div>
+          <button id="goFixBtn" class="danger big-action progress-cta progress-cta-danger">Fix this now →</button>
+        </div>
+
+        <div id="passExportBox" class="next-action good hidden">
+          <div><div class="next-title">This is inside the limits</div><div class="next-text">No simplification is needed. Download a KML copy if you need one.</div></div>
+          <button id="exportOriginalKmlBtn" class="primary big-action" disabled>Download original KML</button>
+        </div>
+
+        <div class="map-card">
+          <div class="map-head"><span class="map-title">Map view</span><span id="resultMapMeta" class="map-meta">Original polygon(s)</span></div>
+          <div id="resultMap" class="map-wrap" style="height:430px;min-height:430px"><div class="empty-preview">Polygon map will appear after upload.</div></div>
+        </div>
+
+        <div style="margin-top:14px"><div class="step-title" style="font-size:17px;margin-bottom:8px">Files checked</div><div id="fileList" class="files"><div class="hint">No files loaded yet.</div></div></div>
+
+        <details class="details-box">
+          <summary>Show detailed polygon breakdown</summary>
+          <div id="detailTable" class="hint">No polygon detail yet.</div>
+        </details>
+      </div>
+    </section>
+
+    <section id="step3" class="step" hidden>
+      <div class="step-head"><div class="step-head-main"><span class="step-num">3</span><div><div class="step-title">Fix the problem</div><div class="step-subtitle">This step only appears if the uploaded file fails a limit check.</div></div></div><div class="step-head-actions"><button id="backToResultsBtn" class="back-btn">← Back</button></div></div>
+      <div class="step-body">
+        <div id="fixPolygonCountBlock" class="fix-panel cannot hidden">
+          <div class="fix-title">Too many separate polygons</div>
+          <div class="fix-text">This tool cannot safely reduce the number of individual polygons. AusAlert allows 10 or fewer. Open the file in the polygon editor, merge/delete/split the source polygons, then come back and upload the fixed file again.</div>
+        </div>
+        <div id="simplifyBlock" class="fix-panel hidden">
+          <div class="action-box" style="border:0;background:transparent;padding:0">
+            <div><div class="action-title">Make a changed copy under 100 vertices</div><div class="action-text">This uses simple line simplification. The shape will change, so the next step makes you compare the original and simplified file before export.</div></div>
+            <button id="simplifyBtn" class="warning big-action progress-cta progress-cta-warning" disabled>⚠️ Simplify to under 100 vertices</button>
+          </div>
+        </div>
+        <div id="simplifiedNotice" class="message warn has-simplified-block"><strong>Important:</strong> simplified output is a changed copy. Check the shape in the next step before using it in AusAlert.</div>
+      </div>
+    </section>
+
+    <section id="step4" class="step" hidden>
+      <div class="step-head"><div class="step-head-main"><span class="step-num">4</span><div><div class="step-title">Compare and export</div><div class="step-subtitle">Blue is the original. Red is the simplified copy. Check the shape, then download the KML.</div></div></div><div class="step-head-actions"><button id="backToFixBtn" class="back-btn">← Back</button></div></div>
+      <div class="step-body">
+        <div class="compare-grid">
+          <div class="preview-card">
+            <div class="preview-head"><span class="preview-title">Original polygon(s)</span><span id="originalMeta" class="preview-meta">Nothing loaded</span></div>
+            <div id="originalPreview" class="map-wrap"><div class="empty-preview">Original polygons will appear here.</div></div>
+          </div>
+          <div class="preview-card">
+            <div class="preview-head"><span class="preview-title">Simplified copy</span><span id="simplifiedMeta" class="preview-meta">Not created</span></div>
+            <div id="simplifiedPreview" class="map-wrap"><div class="empty-preview">After simplification, the changed copy will appear here.</div></div>
+          </div>
+        </div>
+        <div class="message warn"><strong>Do a visual check:</strong> the simplified polygon is not identical. Confirm it still matches what you intend before uploading to AusAlert.</div>
+        <div class="final-download-area">
+          <div class="final-download-panel">
+            <div class="final-download-copy"><strong>Ready to export</strong>Download the simplified polygon as a KML file after checking the shape.</div>
+            <button id="exportSimplifiedKmlBtn" class="final-kml-button" disabled>Download KML</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="simplifyModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="simplifyTitle">
+  <div class="modal">
+    <div id="simplifyTitle" class="modal-head">Stop — simplification changes the polygon</div>
+    <div class="modal-body">
+      <p><strong>The output polygon will not be exactly the same shape as the original.</strong></p>
+      <p>Use the simplified file only after comparing it in Step 4 and confirming it is suitable for AusAlert.</p>
+      <p class="fineprint">This tool tries to reduce the combined vertex count below 100. It does not safely fix having more than 10 separate polygons.</p>
+    </div>
+    <div class="modal-actions">
+      <button id="cancelSimplifyBtn">Cancel</button>
+      <button id="confirmSimplifyBtn" class="danger">I understand — create changed copy</button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" onload="if (window.render) window.render()" onerror="console.warn('Map library unavailable; using built-in shape preview.')"></script>
+<script>
+'use strict';
+
+const LIMIT_VERTICES = 100;
+const TARGET_SIMPLIFIED_VERTICES = 99;
+const LIMIT_POLYGONS = 10;
+const SUPPORTED_EXTS = new Set(['kml','gml','geojson','json','shp']);
+
+const state = {
+  files: [],
+  polygons: [],
+  simplifiedPolygons: [],
+  hadUnsupported: false,
+  stage: 'upload',
+  batchProcessing: false,
+  nextPulseDone: false
+};
+
+const $ = (id) => document.getElementById(id);
+const els = {
+  app: $('app'), step1: $('step1'), step2: $('step2'), step3: $('step3'), step4: $('step4'),
+  dropZone: $('dropZone'), fileInput: $('fileInput'), fileList: $('fileList'), uploadPanel: $('uploadPanel'), uploadFileList: $('uploadFileList'), uploadCount: $('uploadCount'), addMoreBtn: $('addMoreBtn'), goResultsBtn: $('goResultsBtn'),
+  verdict: $('verdict'), vertexStat: $('vertexStat'), polygonStat: $('polygonStat'), formatStat: $('formatStat'), simplifiedStat: $('simplifiedStat'),
+  limitMessages: $('limitMessages'), resultMap: $('resultMap'), resultMapMeta: $('resultMapMeta'),
+  nextActionBox: $('nextActionBox'), nextActionText: $('nextActionText'), goFixBtn: $('goFixBtn'), passExportBox: $('passExportBox'),
+  fixPolygonCountBlock: $('fixPolygonCountBlock'), simplifyBlock: $('simplifyBlock'),
+  originalPreview: $('originalPreview'), simplifiedPreview: $('simplifiedPreview'), originalMeta: $('originalMeta'), simplifiedMeta: $('simplifiedMeta'),
+  detailTable: $('detailTable'), clearBtn: $('clearBtn'), backToUploadBtn: $('backToUploadBtn'), backToResultsBtn: $('backToResultsBtn'), backToFixBtn: $('backToFixBtn'), simplifyBtn: $('simplifyBtn'), exportOriginalKmlBtn: $('exportOriginalKmlBtn'),
+  exportOriginalCompareKmlBtn: $('exportOriginalCompareKmlBtn'), exportSimplifiedKmlBtn: $('exportSimplifiedKmlBtn'), exportSimplifiedGeojsonBtn: $('exportSimplifiedGeojsonBtn'),
+  simplifyModal: $('simplifyModal'), cancelSimplifyBtn: $('cancelSimplifyBtn'), confirmSimplifyBtn: $('confirmSimplifyBtn'), toast: $('toast')
+};
+
+function escapeHtml(value){
+  return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function getExt(name){
+  const parts = String(name || '').split('.');
+  return parts.length > 1 ? parts.pop().toLowerCase() : '';
+}
+function localName(node){
+  return (node.localName || node.nodeName || '').split(':').pop();
+}
+function isSamePoint(a,b){
+  return a && b && Math.abs(a[0]-b[0]) < 1e-12 && Math.abs(a[1]-b[1]) < 1e-12;
+}
+function cleanNumber(n){
+  return Number.isFinite(n) ? n : 0;
+}
+function stripClosingPoint(ring){
+  if (!ring || ring.length === 0) return [];
+  const out = ring.map(p => [Number(p[0]), Number(p[1])]).filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+  if (out.length > 1 && isSamePoint(out[0], out[out.length - 1])) out.pop();
+  return out;
+}
+function closeRing(ring){
+  const out = stripClosingPoint(ring);
+  if (out.length && !isSamePoint(out[0], out[out.length - 1])) out.push([...out[0]]);
+  return out;
+}
+function ringVertexCount(ring){
+  return stripClosingPoint(ring).length;
+}
+function polygonVertexCount(poly){
+  return poly.rings.reduce((sum, ring) => sum + ringVertexCount(ring), 0);
+}
+function totalVertices(polygons){
+  return polygons.reduce((sum, poly) => sum + polygonVertexCount(poly), 0);
+}
+function polygonCount(polygons){
+  return polygons.length;
+}
+function clonePolygons(polygons){
+  return polygons.map(poly => ({...poly, rings: poly.rings.map(r => r.map(p => [p[0], p[1]]))}));
+}
+function toast(message){
+  els.toast.textContent = message;
+  els.toast.classList.add('active');
+  window.clearTimeout(toast._t);
+  toast._t = window.setTimeout(() => els.toast.classList.remove('active'), 3600);
+}
+
+function allDescendants(node){
+  return Array.from(node.getElementsByTagName('*'));
+}
+function descendantsByLocalName(node, wanted){
+  const names = Array.isArray(wanted) ? wanted : [wanted];
+  const set = new Set(names.map(n => n.toLowerCase()));
+  return allDescendants(node).filter(n => set.has(localName(n).toLowerCase()));
+}
+function directText(node){
+  return node ? (node.textContent || '').trim() : '';
+}
+
+function parseCoordinateTuples(text){
+  const tuples = String(text || '').trim().split(/\s+/).filter(Boolean);
+  const points = [];
+  for (const tuple of tuples){
+    const parts = tuple.split(',').map(Number);
+    if (parts.length >= 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) points.push([parts[0], parts[1]]);
+  }
+  return points;
+}
+function parseFlatNumberList(text, dimension=2){
+  const nums = String(text || '').match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/g)?.map(Number) || [];
+  const dim = Math.max(2, Number(dimension) || 2);
+  const points = [];
+  for (let i=0; i + 1 < nums.length; i += dim){
+    if (Number.isFinite(nums[i]) && Number.isFinite(nums[i+1])) points.push([nums[i], nums[i+1]]);
+  }
+  return points;
+}
+function normalisePolygon(rings, sourceFile, format, label){
+  const cleaned = rings.map(stripClosingPoint).filter(r => r.length >= 3);
+  if (!cleaned.length) return null;
+  return {rings: cleaned, sourceFile, format, label: label || sourceFile};
+}
+
+function parseKml(text, filename){
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Could not read this KML/XML file.');
+  const polygonNodes = descendantsByLocalName(doc, 'Polygon');
+  const polygons = [];
+  polygonNodes.forEach((node, idx) => {
+    const rings = [];
+    const coordNodes = descendantsByLocalName(node, 'coordinates');
+    coordNodes.forEach(c => {
+      const pts = parseCoordinateTuples(directText(c));
+      if (pts.length >= 3) rings.push(pts);
+    });
+    const poly = normalisePolygon(rings, filename, 'KML', `Polygon ${idx+1}`);
+    if (poly) polygons.push(poly);
+  });
+  if (!polygons.length) throw new Error('No Polygon coordinates were found in this KML.');
+  return polygons;
+}
+
+function parseGml(text, filename){
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Could not read this GML/XML file.');
+  const possiblePolygonNodes = allDescendants(doc).filter(n => ['Polygon','Surface'].includes(localName(n)));
+  const polygons = [];
+  possiblePolygonNodes.forEach((node, idx) => {
+    const rings = [];
+    const linearRings = descendantsByLocalName(node, 'LinearRing');
+    const genericRings = linearRings.length ? [] : descendantsByLocalName(node, 'Ring');
+    const parseContainers = linearRings.length ? linearRings : (genericRings.length ? genericRings : [node]);
+    parseContainers.forEach(rn => {
+      const posLists = descendantsByLocalName(rn, 'posList');
+      const coordNodes = descendantsByLocalName(rn, 'coordinates');
+      if (posLists.length){
+        posLists.forEach(posList => {
+          const dim = posList.getAttribute('srsDimension') || posList.getAttribute('dimension') || 2;
+          const pts = parseFlatNumberList(directText(posList), dim);
+          if (pts.length >= 3) rings.push(pts);
+        });
+        return;
+      }
+      const posNodes = descendantsByLocalName(rn, 'pos');
+      if (posNodes.length){
+        const pts = posNodes.map(p => parseFlatNumberList(directText(p), 2)[0]).filter(Boolean);
+        if (pts.length >= 3) rings.push(pts);
+        return;
+      }
+      coordNodes.forEach(coordNode => {
+        const pts = parseCoordinateTuples(directText(coordNode));
+        if (pts.length >= 3) rings.push(pts);
+      });
+    });
+    const poly = normalisePolygon(rings, filename, 'GML', `Polygon ${idx+1}`);
+    if (poly) polygons.push(poly);
+  });
+  if (!polygons.length) throw new Error('No GML polygon rings were found.');
+  return polygons;
+}
+
+function parseGeoJsonObject(obj, filename){
+  const polygons = [];
+  function addPolygon(coords, label){
+    if (!Array.isArray(coords)) return;
+    const rings = coords.map(r => Array.isArray(r) ? r.map(p => [Number(p[0]), Number(p[1])]) : []);
+    const poly = normalisePolygon(rings, filename, 'GeoJSON', label);
+    if (poly) polygons.push(poly);
+  }
+  function walkGeometry(geom, label){
+    if (!geom) return;
+    const type = geom.type;
+    if (type === 'Polygon') addPolygon(geom.coordinates, label);
+    else if (type === 'MultiPolygon') (geom.coordinates || []).forEach((coords, i) => addPolygon(coords, `${label || 'MultiPolygon'} ${i+1}`));
+    else if (type === 'GeometryCollection') (geom.geometries || []).forEach((g, i) => walkGeometry(g, `${label || 'Geometry'} ${i+1}`));
+  }
+  function walk(obj, fallbackLabel){
+    if (!obj) return;
+    if (obj.type === 'FeatureCollection') (obj.features || []).forEach((f, i) => walk(f, f?.properties?.name || `Feature ${i+1}`));
+    else if (obj.type === 'Feature') walkGeometry(obj.geometry, obj?.properties?.name || fallbackLabel || 'Feature');
+    else walkGeometry(obj, fallbackLabel || obj.type || 'Geometry');
+  }
+  walk(obj, filename);
+  if (!polygons.length) throw new Error('No Polygon or MultiPolygon geometry was found in this GeoJSON.');
+  return polygons;
+}
+function parseGeoJson(text, filename){
+  return parseGeoJsonObject(JSON.parse(text), filename);
+}
+
+function parseShp(buffer, filename){
+  const dv = new DataView(buffer);
+  if (dv.byteLength < 100) throw new Error('This SHP file is too small to be valid.');
+  const fileCode = dv.getInt32(0, false);
+  if (fileCode !== 9994) throw new Error('This does not look like an ESRI SHP file.');
+  const mainShapeType = dv.getInt32(32, true);
+  const supportedShapeTypes = new Set([5,15,25]);
+  if (!supportedShapeTypes.has(mainShapeType)) throw new Error('Only polygon SHP geometry is supported by this simple checker.');
+  let offset = 100;
+  const polygons = [];
+  let recordIndex = 0;
+  while (offset + 8 <= dv.byteLength){
+    const contentLengthWords = dv.getInt32(offset + 4, false);
+    const contentBytes = contentLengthWords * 2;
+    const contentOffset = offset + 8;
+    if (contentOffset + contentBytes > dv.byteLength || contentBytes < 4) break;
+    const shapeType = dv.getInt32(contentOffset, true);
+    if (supportedShapeTypes.has(shapeType)){
+      const numParts = dv.getInt32(contentOffset + 36, true);
+      const numPoints = dv.getInt32(contentOffset + 40, true);
+      const partsOffset = contentOffset + 44;
+      const pointsOffset = partsOffset + numParts * 4;
+      if (numParts > 0 && numPoints > 0 && pointsOffset + numPoints * 16 <= contentOffset + contentBytes){
+        const parts = [];
+        for (let i=0; i<numParts; i++) parts.push(dv.getInt32(partsOffset + i*4, true));
+        const allPoints = [];
+        for (let i=0; i<numPoints; i++){
+          const po = pointsOffset + i*16;
+          allPoints.push([dv.getFloat64(po, true), dv.getFloat64(po+8, true)]);
+        }
+        const rings = [];
+        for (let p=0; p<numParts; p++){
+          const start = parts[p];
+          const end = p + 1 < numParts ? parts[p+1] : allPoints.length;
+          const ring = allPoints.slice(start, end);
+          if (ring.length >= 3) rings.push(ring);
+        }
+        const poly = normalisePolygon(rings, filename, 'SHP', `Record ${recordIndex+1}`);
+        if (poly) polygons.push(poly);
+      }
+    }
+    recordIndex++;
+    offset += 8 + contentBytes;
+  }
+  if (!polygons.length) throw new Error('No polygon records were found in this SHP file. Upload the .shp file itself, not only .dbf/.shx.');
+  return polygons;
+}
+
+function tryGenericConversion(text, filename){
+  const trimmed = String(text || '').trim();
+  if (!trimmed) throw new Error('This file is empty or binary, so it cannot be converted here.');
+  try {
+    const obj = JSON.parse(trimmed);
+    return parseGeoJsonObject(obj, filename).map(p => ({...p, format:'Converted to KML from JSON-like content'}));
+  } catch (_) {}
+  if (trimmed.startsWith('<')){
+    try { return parseKml(trimmed, filename).map(p => ({...p, format:'Converted to KML from XML/KML-like content'})); } catch (_) {}
+    try { return parseGml(trimmed, filename).map(p => ({...p, format:'Converted to KML from XML/GML-like content'})); } catch (_) {}
+  }
+  const matches = trimmed.match(/[-+]?\d{1,3}(?:\.\d+)?\s*,\s*[-+]?\d{1,3}(?:\.\d+)?/g) || [];
+  const pts = matches.map(m => m.split(',').map(Number)).filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+  if (pts.length >= 3){
+    const poly = normalisePolygon([pts], filename, 'Experimental text conversion', 'Converted polygon');
+    if (poly) return [poly];
+  }
+  throw new Error('Could not find polygon coordinates to convert. Use QGIS, ArcGIS, or the polygon editor to convert this file first.');
+}
+
+async function readFileText(file){
+  return await file.text();
+}
+async function readFileBuffer(file){
+  return await file.arrayBuffer();
+}
+function rebuildPolygonsFromFiles(){
+  state.polygons = [];
+  state.hadUnsupported = false;
+  for (const file of state.files){
+    if (file.status === 'unsupported') state.hadUnsupported = true;
+    if (Array.isArray(file.polygons) && ['ok','converted'].includes(file.status)) state.polygons.push(...file.polygons);
+  }
+}
+function hasPendingFiles(){
+  return state.files.some(f => f.status === 'loading');
+}
+
+async function processFiles(files){
+  const list = Array.from(files || []);
+  if (!list.length) return;
+  state.simplifiedPolygons = [];
+  state.stage = 'upload';
+  state.batchProcessing = true;
+  state.nextPulseDone = false;
+
+  for (const file of list){
+    const ext = getExt(file.name);
+    const record = {name:file.name, size:file.size, ext:ext || 'none', supported:SUPPORTED_EXTS.has(ext), status:'loading', message:'Reading file…', polygons:[], convertAttempt:null, fileRef:file};
+    state.files.push(record);
+    rebuildPolygonsFromFiles();
+    render();
+    try {
+      let polygons = [];
+      if (ext === 'shp') polygons = parseShp(await readFileBuffer(file), file.name);
+      else {
+        const text = await readFileText(file);
+        if (ext === 'kml') polygons = parseKml(text, file.name);
+        else if (ext === 'gml') polygons = parseGml(text, file.name);
+        else if (ext === 'geojson' || ext === 'json') polygons = parseGeoJson(text, file.name);
+        else {
+          record.supported = false;
+          record.status = 'unsupported';
+          record.message = 'This is not KML, GML, GeoJSON/JSON, or SHP. You can try converting it to KML, but conversion may fail if the coordinates are not readable text.';
+          record.rawText = text;
+          rebuildPolygonsFromFiles();
+          render();
+          continue;
+        }
+      }
+      record.polygons = polygons;
+      record.status = 'ok';
+      record.message = 'Checked successfully.';
+    } catch (err){
+      record.status = record.supported ? 'error' : 'unsupported';
+      record.message = err?.message || 'Could not read this file.';
+    }
+    rebuildPolygonsFromFiles();
+    render();
+  }
+  els.fileInput.value = '';
+  state.batchProcessing = false;
+  rebuildPolygonsFromFiles();
+  render();
+}
+
+function convertUnsupported(index){
+  const record = state.files[index];
+  if (!record) return;
+  try {
+    const converted = tryGenericConversion(record.rawText || '', record.name);
+    record.polygons = converted;
+    record.supported = false;
+    record.status = 'converted';
+    record.message = 'Converted experimentally. Treat this as changed/unchecked output and visually verify it.';
+    state.simplifiedPolygons = [];
+    rebuildPolygonsFromFiles();
+    toast('Experimental conversion succeeded. Check it visually before use.');
+  } catch (err){
+    record.convertAttempt = err?.message || 'Conversion failed.';
+    toast(record.convertAttempt);
+  }
+  render();
+}
+window.convertUnsupported = convertUnsupported;
+function removeFile(index){
+  state.files.splice(index, 1);
+  state.simplifiedPolygons = [];
+  state.stage = 'upload';
+  state.nextPulseDone = false;
+  rebuildPolygonsFromFiles();
+  render();
+}
+window.removeFile = removeFile;
+function goToResults(){
+  if (!state.files.length || hasPendingFiles()) return;
+  state.stage = 'results';
+  state.simplifiedPolygons = [];
+  rebuildPolygonsFromFiles();
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function showSimplifyModal(){
+  if (!state.polygons.length) return;
+  els.simplifyModal.classList.add('active');
+}
+function hideSimplifyModal(){
+  els.simplifyModal.classList.remove('active');
+}
+
+function sqrDistPointToSegment(p, a, b){
+  const x = p[0], y = p[1], x1 = a[0], y1 = a[1], x2 = b[0], y2 = b[1];
+  const dx = x2 - x1, dy = y2 - y1;
+  if (dx === 0 && dy === 0) return (x-x1)*(x-x1) + (y-y1)*(y-y1);
+  let t = ((x-x1)*dx + (y-y1)*dy) / (dx*dx + dy*dy);
+  t = Math.max(0, Math.min(1, t));
+  const px = x1 + t*dx, py = y1 + t*dy;
+  return (x-px)*(x-px) + (y-py)*(y-py);
+}
+function rdp(points, epsilon){
+  if (points.length <= 2) return points.slice();
+  let maxDist = -1, index = -1;
+  const end = points.length - 1;
+  for (let i=1; i<end; i++){
+    const d = sqrDistPointToSegment(points[i], points[0], points[end]);
+    if (d > maxDist){ maxDist = d; index = i; }
+  }
+  if (Math.sqrt(maxDist) > epsilon){
+    const left = rdp(points.slice(0, index+1), epsilon);
+    const right = rdp(points.slice(index), epsilon);
+    return left.slice(0,-1).concat(right);
+  }
+  return [points[0], points[end]];
+}
+function centroid(points){
+  let x=0,y=0;
+  points.forEach(p => { x += p[0]; y += p[1]; });
+  return [x/points.length, y/points.length];
+}
+function farthestPairIndices(points){
+  let bestI=0,bestJ=Math.max(1, Math.floor(points.length/2)), best=-1;
+  for (let i=0; i<points.length; i++){
+    for (let j=i+1; j<points.length; j++){
+      const dx = points[i][0]-points[j][0], dy = points[i][1]-points[j][1];
+      const d = dx*dx + dy*dy;
+      if (d > best){ best=d; bestI=i; bestJ=j; }
+    }
+  }
+  return [bestI,bestJ];
+}
+function rotateRing(points, startIndex){
+  return points.slice(startIndex).concat(points.slice(0,startIndex));
+}
+function ensureAtLeastTriangle(original, simplified){
+  const clean = stripClosingPoint(simplified);
+  if (clean.length >= 3) return clean;
+  const pts = stripClosingPoint(original);
+  if (pts.length <= 3) return pts;
+  const c = centroid(pts);
+  const ranked = pts.map((p,i) => ({p,i,d:(p[0]-c[0])*(p[0]-c[0])+(p[1]-c[1])*(p[1]-c[1])})).sort((a,b)=>b.d-a.d);
+  const chosen = ranked.slice(0,3).sort((a,b)=>a.i-b.i).map(o=>o.p);
+  return chosen;
+}
+function simplifyClosedRing(ring, epsilon){
+  const pts = stripClosingPoint(ring);
+  if (pts.length <= 4) return pts;
+  const [start] = farthestPairIndices(pts);
+  const rotated = rotateRing(pts, start);
+  const line = rotated.concat([rotated[0]]);
+  let simplified = rdp(line, epsilon);
+  simplified = stripClosingPoint(simplified);
+  return ensureAtLeastTriangle(pts, simplified);
+}
+function allBBox(polygons){
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  polygons.forEach(poly => poly.rings.forEach(ring => ring.forEach(p => {
+    minX = Math.min(minX, p[0]); minY = Math.min(minY, p[1]); maxX = Math.max(maxX, p[0]); maxY = Math.max(maxY, p[1]);
+  })));
+  if (!Number.isFinite(minX)) return null;
+  if (minX === maxX){ minX -= 0.001; maxX += 0.001; }
+  if (minY === maxY){ minY -= 0.001; maxY += 0.001; }
+  return {minX,minY,maxX,maxY,width:maxX-minX,height:maxY-minY};
+}
+function simplifyWithTolerance(polygons, epsilon){
+  return polygons.map(poly => ({...poly, rings: poly.rings.map(r => simplifyClosedRing(r, epsilon)).filter(r => r.length >= 3)})).filter(p => p.rings.length);
+}
+function simplifyToTarget(){
+  const original = clonePolygons(state.polygons);
+  const originalVertices = totalVertices(original);
+  if (originalVertices < LIMIT_VERTICES){
+    state.simplifiedPolygons = clonePolygons(original);
+    state.stage = 'compare';
+    toast('Already under 100 vertices. A matching copy was created.');
+    render();
+    return;
+  }
+  const minPossible = original.reduce((sum, poly) => sum + poly.rings.reduce((rs, r) => rs + Math.min(3, ringVertexCount(r)), 0), 0);
+  if (minPossible > TARGET_SIMPLIFIED_VERTICES){
+    state.simplifiedPolygons = simplifyWithTolerance(original, Number.MAX_SAFE_INTEGER);
+    state.stage = 'compare';
+    toast('Even the most aggressive simple reduction cannot get this below 100 vertices because there are too many rings/polygons.');
+    render();
+    return;
+  }
+  const bbox = allBBox(original);
+  const diag = bbox ? Math.sqrt(bbox.width*bbox.width + bbox.height*bbox.height) : 1;
+  let low = 0, high = diag || 1;
+  let best = simplifyWithTolerance(original, high);
+  for (let i=0; i<48; i++){
+    const mid = (low + high) / 2;
+    const candidate = simplifyWithTolerance(original, mid);
+    if (totalVertices(candidate) <= TARGET_SIMPLIFIED_VERTICES){
+      best = candidate;
+      high = mid;
+    } else {
+      low = mid;
+    }
+  }
+  state.simplifiedPolygons = best;
+  state.stage = 'compare';
+  toast(`Simplified from ${originalVertices} to ${totalVertices(best)} vertices. Check the changed shape before use.`);
+  render();
+}
+
+function formatBytes(bytes){
+  if (!Number.isFinite(bytes)) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024*1024) return `${(bytes/1024).toFixed(1)} KB`;
+  return `${(bytes/1024/1024).toFixed(1)} MB`;
+}
+function renderStat(el, value, note, cls){
+  el.classList.remove('good','bad','warn');
+  if (cls) el.classList.add(cls);
+  el.querySelector('.stat-value').textContent = value;
+  el.querySelector('.stat-note').textContent = note;
+}
+function renderVerdict(){
+  const v = totalVertices(state.polygons);
+  const p = polygonCount(state.polygons);
+  els.verdict.className = 'verdict wait';
+  if (!state.files.length){
+    els.verdict.querySelector('.verdict-badge').textContent = '?';
+    els.verdict.querySelector('.verdict-title').textContent = 'Waiting for files';
+    els.verdict.querySelector('.verdict-text').textContent = 'Step 1: drop your polygon files into the box above.';
+    return;
+  }
+  const hasParsed = p > 0;
+  const unsupported = state.files.filter(f => f.status === 'unsupported').length;
+  const errors = state.files.filter(f => f.status === 'error').length;
+  const failVertices = hasParsed && v >= LIMIT_VERTICES;
+  const failPolys = hasParsed && p > LIMIT_POLYGONS;
+  if (hasParsed && !failVertices && !failPolys && !unsupported && !errors){
+    els.verdict.className = 'verdict pass';
+    els.verdict.querySelector('.verdict-badge').textContent = '✓';
+    els.verdict.querySelector('.verdict-title').textContent = 'YES — safe for the limits';
+    els.verdict.querySelector('.verdict-text').textContent = `The checked polygons have ${v} vertices and ${p} individual polygon${p===1?'':'s'}. You can download the original KML from this step.`;
+  } else if (hasParsed && !failVertices && !failPolys){
+    els.verdict.className = 'verdict pass';
+    els.verdict.querySelector('.verdict-badge').textContent = '✓';
+    els.verdict.querySelector('.verdict-title').textContent = 'YES — parsed polygons are safe';
+    els.verdict.querySelector('.verdict-text').textContent = 'Warning: some files were unsupported or unreadable. Only the parsed polygons were checked.';
+  } else if (hasParsed){
+    els.verdict.className = 'verdict fail';
+    els.verdict.querySelector('.verdict-badge').textContent = '!';
+    els.verdict.querySelector('.verdict-title').textContent = 'NO — fix before AusAlert';
+    const reasons = [];
+    if (failVertices) reasons.push(`${v} vertices; must be under 100`);
+    if (failPolys) reasons.push(`${p} polygons; must be 10 or fewer`);
+    els.verdict.querySelector('.verdict-text').textContent = reasons.join('. ') + '.';
+  } else {
+    els.verdict.className = 'verdict fail';
+    els.verdict.querySelector('.verdict-badge').textContent = '!';
+    els.verdict.querySelector('.verdict-title').textContent = 'No usable polygons found';
+    els.verdict.querySelector('.verdict-text').textContent = 'Use KML, GML, GeoJSON/JSON, or polygon SHP files. Unsupported files can be tried through the per-file convert button.';
+  }
+}
+function renderStats(){
+  const v = totalVertices(state.polygons);
+  const p = polygonCount(state.polygons);
+  const supportedOk = state.files.filter(f => ['ok','converted'].includes(f.status)).length;
+  const unsupported = state.files.filter(f => f.status === 'unsupported').length;
+  const errors = state.files.filter(f => f.status === 'error').length;
+  renderStat(els.vertexStat, state.files.length ? String(v) : '—', state.files.length ? (v < LIMIT_VERTICES ? 'OK: below 100' : 'Bad: 100 or more') : 'Limit: under 100', state.files.length ? (v < LIMIT_VERTICES ? 'good' : 'bad') : '');
+  renderStat(els.polygonStat, state.files.length ? String(p) : '—', state.files.length ? (p <= LIMIT_POLYGONS ? 'OK: 10 or fewer' : 'Bad: more than 10') : 'Limit: 10 or fewer', state.files.length ? (p <= LIMIT_POLYGONS ? 'good' : 'bad') : '');
+  const formatClass = errors || unsupported ? 'warn' : (state.files.length ? 'good' : '');
+  renderStat(els.formatStat, state.files.length ? `${supportedOk}/${state.files.length}` : '—', state.files.length ? `${unsupported} unsupported, ${errors} error${errors===1?'':'s'}` : 'KML, GML, GeoJSON, SHP', formatClass);
+  const sv = totalVertices(state.simplifiedPolygons);
+  renderStat(els.simplifiedStat, state.simplifiedPolygons.length ? String(sv) : '—', state.simplifiedPolygons.length ? (sv < LIMIT_VERTICES ? 'Simplified copy is under 100' : 'Still 100 or more') : 'Created only if requested', state.simplifiedPolygons.length ? (sv < LIMIT_VERTICES ? 'good' : 'bad') : '');
+}
+function renderMessages(){
+  const messages = [];
+  const v = totalVertices(state.polygons), p = polygonCount(state.polygons);
+  if (state.polygons.length){
+    if (v >= LIMIT_VERTICES) messages.push(`<div class="message bad big-message"><strong>Vertex fail:</strong> ${v} combined vertices. AusAlert needs fewer than 100.</div>`);
+    if (p > LIMIT_POLYGONS) messages.push(`<div class="message bad big-message"><strong>Polygon fail:</strong> ${p} individual polygons. AusAlert allows 10 or fewer.</div>`);
+    if (v < LIMIT_VERTICES && p <= LIMIT_POLYGONS) messages.push(`<div class="message good big-message"><strong>Pass:</strong> the checked polygons are inside both limits.</div>`);
+  }
+  if (state.files.some(f => f.status === 'unsupported')) messages.push(`<div class="message warn"><strong>Unsupported file present:</strong> it is not KML, GML, GeoJSON, or SHP. Click its "Try convert to KML" button in the file list if you want to try converting it.</div>`);
+  if (state.files.some(f => f.status === 'converted')) messages.push(`<div class="message warn"><strong>Converted file present:</strong> conversion is experimental. Export and check the result before AusAlert use.</div>`);
+  els.limitMessages.innerHTML = messages.join('');
+}
+function fileCardsHtml({allowRemove=false, compactUpload=false}={}){
+  if (!state.files.length) return '<div class="hint">No files added yet.</div>';
+  return state.files.map((file, index) => {
+    const vertices = totalVertices(file.polygons || []);
+    const polys = polygonCount(file.polygons || []);
+    const statusClass = file.status === 'ok' || file.status === 'converted' ? 'ok' : (file.status === 'unsupported' ? 'warn' : 'bad');
+    const cardClass = file.status === 'unsupported' || file.status === 'converted' ? ' unsupported' : (file.status === 'error' ? ' error' : '');
+    const statusText = file.status === 'ok' ? 'SUPPORTED' : file.status === 'converted' ? 'CONVERTED' : file.status === 'unsupported' ? 'UNSUPPORTED' : file.status === 'loading' ? 'READING' : 'ERROR';
+    const convertButton = file.status === 'unsupported' ? `<button class="warning" onclick="convertUnsupported(${index})">Try convert to KML</button>` : '';
+    const removeButton = allowRemove ? `<button class="remove-file-btn" onclick="removeFile(${index})">Remove</button>` : '';
+    const conversionError = file.convertAttempt ? `<div class="message bad">${escapeHtml(file.convertAttempt)}</div>` : '';
+    if (compactUpload){
+      const message = file.status === 'loading'
+        ? 'Reading file…'
+        : file.status === 'unsupported'
+          ? 'This format is not KML, GML, GeoJSON/JSON, or SHP. Convert it before checking.'
+          : file.status === 'error'
+            ? (file.message || 'Could not read this file.')
+            : file.status === 'converted'
+              ? 'Converted experimentally. Check carefully after export.'
+              : '';
+      return `<div class="file-card upload-compact${cardClass}">
+        <div class="upload-file-main"><div class="file-name">${escapeHtml(file.name)}</div><div class="file-meta">.${escapeHtml(file.ext)} · ${formatBytes(file.size)}</div></div>
+        <div class="mini"><div class="mini-label">Vertices</div><div class="mini-value">${vertices || '—'}</div></div>
+        <div class="mini"><div class="mini-label">Polygons</div><div class="mini-value">${polys || '—'}</div></div>
+        <div class="file-actions">${convertButton}${removeButton}</div>
+        ${message ? `<div class="upload-message">${escapeHtml(message)}</div>` : ''}${conversionError}
+      </div>`;
+    }
+    return `<div class="file-card${cardClass}">
+      <div class="file-top"><div><div class="file-name">${escapeHtml(file.name)}</div><div class="file-meta">.${escapeHtml(file.ext)} · ${formatBytes(file.size)}</div></div><span class="file-status ${statusClass}">${statusText}</span></div>
+      <div class="file-body">
+        <div class="mini-grid"><div class="mini"><div class="mini-label">Vertices</div><div class="mini-value">${vertices || '—'}</div></div><div class="mini"><div class="mini-label">Polygons</div><div class="mini-value">${polys || '—'}</div></div></div>
+        <div class="hint">${escapeHtml(file.message || '')}</div>
+        <div class="file-actions">${convertButton}${removeButton}</div>${conversionError}
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderFileList(){
+  if (els.fileList) els.fileList.innerHTML = state.files.length ? fileCardsHtml({allowRemove:false}) : '<div class="hint">No files loaded yet.</div>';
+  if (els.uploadFileList) els.uploadFileList.innerHTML = fileCardsHtml({allowRemove:true, compactUpload:true});
+  if (els.uploadPanel) els.uploadPanel.classList.toggle('hidden', !state.files.length);
+  if (els.uploadCount){
+    const pending = hasPendingFiles();
+    els.uploadCount.textContent = `${state.files.length} file${state.files.length===1?'':'s'}${pending ? ' · reading…' : ''}`;
+  }
+  if (els.goResultsBtn){
+    const ready = !!state.files.length && !hasPendingFiles() && !state.batchProcessing;
+    els.goResultsBtn.disabled = !ready;
+    els.goResultsBtn.classList.toggle('ready', ready);
+    els.goResultsBtn.classList.toggle('is-idle', !ready);
+    if (ready && !state.nextPulseDone){
+      state.nextPulseDone = true;
+      els.goResultsBtn.classList.remove('flash');
+      void els.goResultsBtn.offsetWidth;
+      els.goResultsBtn.classList.add('flash');
+    }
+    if (!ready) els.goResultsBtn.classList.remove('flash');
+  }
+}
+
+function polygonBoundsWithFallback(polygons){
+  const bbox = allBBox(polygons);
+  if (!bbox) return null;
+  const padX = bbox.width * 0.08 || 0.001;
+  const padY = bbox.height * 0.08 || 0.001;
+  return {...bbox, minX:bbox.minX-padX, maxX:bbox.maxX+padX, minY:bbox.minY-padY, maxY:bbox.maxY+padY, width:bbox.width+2*padX, height:bbox.height+2*padY};
+}
+function renderSvg(polygons, target, opts={}){
+  if (!polygons || !polygons.length){
+    target.innerHTML = `<div class="empty-preview">${escapeHtml(opts.empty || 'Nothing to preview.')}</div>`;
+    return;
+  }
+  const bbox = polygonBoundsWithFallback(opts.bboxPolygons || polygons);
+  const w = 1000, h = 700;
+  const sx = w / bbox.width, sy = h / bbox.height;
+  const s = Math.min(sx, sy);
+  const usedW = bbox.width * s, usedH = bbox.height * s;
+  const ox = (w - usedW) / 2;
+  const oy = (h - usedH) / 2;
+  const project = (p) => [ox + (p[0]-bbox.minX)*s, oy + (bbox.maxY-p[1])*s];
+  const paths = polygons.map(poly => {
+    const d = poly.rings.map(ring => {
+      const pts = closeRing(ring).map(project);
+      if (!pts.length) return '';
+      return `M ${pts.map(p => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`).join(' L ')} Z`;
+    }).join(' ');
+    return `<path d="${d}" fill="${opts.fill || 'rgba(22,100,214,.14)'}" stroke="${opts.stroke || '#1664d6'}" stroke-width="3" vector-effect="non-scaling-stroke" fill-rule="evenodd"><title>${escapeHtml(poly.sourceFile)} · ${polygonVertexCount(poly)} vertices</title></path>`;
+  }).join('\n');
+  const grid = `<rect x="0" y="0" width="1000" height="700" fill="transparent"/><path d="M0 350H1000 M500 0V700" stroke="rgba(0,0,0,.06)" stroke-width="1"/>`;
+  target.innerHTML = `<svg viewBox="0 0 1000 700" role="img" aria-label="Polygon preview">${grid}${paths}</svg>`;
+}
+
+const mapSlots = {};
+function coordinatesLookGeographic(polygons){
+  if (!polygons || !polygons.length) return false;
+  let checked = 0;
+  for (const poly of polygons){
+    for (const ring of poly.rings){
+      for (const p of ring){
+        checked++;
+        if (!Number.isFinite(p[0]) || !Number.isFinite(p[1])) return false;
+        if (p[0] < -180 || p[0] > 180 || p[1] < -90 || p[1] > 90) return false;
+      }
+    }
+  }
+  return checked > 0;
+}
+function polygonToLatLngs(poly){
+  return poly.rings.map(ring => closeRing(ring).map(p => [p[1], p[0]]));
+}
+function clearMapSlot(id){
+  const slot = mapSlots[id];
+  if (slot && slot.layer) slot.layer.clearLayers();
+}
+function destroyMapSlot(id){
+  const slot = mapSlots[id];
+  if (slot && slot.map) slot.map.remove();
+  delete mapSlots[id];
+}
+
+function addNeutralReferenceLayer(map){
+  const reference = L.featureGroup().addTo(map);
+  for (let lon = -180; lon <= 180; lon += 30){
+    L.polyline([[-85, lon], [85, lon]], {color:'#94a3b8', weight:1, opacity:0.25, interactive:false}).addTo(reference);
+  }
+  for (let lat = -60; lat <= 60; lat += 30){
+    L.polyline([[lat, -180], [lat, 180]], {color:'#94a3b8', weight:1, opacity:0.22, interactive:false}).addTo(reference);
+  }
+  const labels = [
+    ['AUSTRALIA', -25, 134],
+    ['INDONESIA', -3, 118],
+    ['PAPUA NEW GUINEA', -6, 145],
+    ['NEW ZEALAND', -42, 172],
+    ['TIMOR SEA', -11, 128],
+    ['CORAL SEA', -17, 155]
+  ];
+  labels.forEach(([text, lat, lon]) => {
+    L.marker([lat, lon], {
+      interactive:false,
+      icon:L.divIcon({className:'map-label', html:escapeHtml(text), iconSize:[120,18], iconAnchor:[60,9]})
+    }).addTo(reference);
+  });
+  return reference;
+}
+
+function renderMapSlot(id, target, polygons, opts={}){
+  if (!target) return;
+  if (!polygons || !polygons.length){
+    destroyMapSlot(id);
+    target.classList.remove('leaflet-container');
+    target.classList.remove('tileless-map');
+    target.innerHTML = `<div class="empty-preview">${escapeHtml(opts.empty || 'Nothing to preview.')}</div>`;
+    return;
+  }
+  if (typeof L === 'undefined' || !coordinatesLookGeographic(polygons)){
+    destroyMapSlot(id);
+    renderSvg(polygons, target, opts);
+    if (!coordinatesLookGeographic(polygons)) {
+      const note = document.createElement('div');
+      note.className = 'empty-preview';
+      note.style.position = 'absolute';
+      note.style.left = '10px';
+      note.style.bottom = '10px';
+      note.style.background = 'rgba(255,255,255,.9)';
+      note.style.border = '1px solid #d8dde3';
+      note.style.borderRadius = '10px';
+      note.style.padding = '8px 10px';
+      note.textContent = 'Coordinate values do not look like latitude/longitude, so this is a shape preview rather than a web map.';
+      target.style.position = 'relative';
+      target.appendChild(note);
+    }
+    return;
+  }
+  if (!mapSlots[id]){
+    target.innerHTML = '';
+    target.classList.remove('tileless-map');
+    const map = L.map(target, {scrollWheelZoom:true, preferCanvas:true, attributionControl:true, zoomControl:true});
+    try {
+      map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet</a>');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        crossOrigin: true,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+    } catch (err){
+      console.warn('Basemap failed to initialise; polygons will still render.', err);
+    }
+    map.setView([0, 0], 2);
+    const layer = L.featureGroup().addTo(map);
+    mapSlots[id] = {map, layer};
+  }
+  const slot = mapSlots[id];
+  if (!slot.layer || typeof slot.layer.getBounds !== 'function'){
+    if (slot.layer) slot.map.removeLayer(slot.layer);
+    slot.layer = L.featureGroup().addTo(slot.map);
+  }
+  slot.layer.clearLayers();
+  const colour = opts.stroke || '#1664d6';
+  polygons.forEach((poly) => {
+    const latlngs = polygonToLatLngs(poly);
+    const layer = L.polygon(latlngs, {color: colour, weight: 3, fillColor: colour, fillOpacity: 0.22, opacity: 0.95});
+    layer.bindTooltip(`${poly.sourceFile || 'Polygon'} · ${polygonVertexCount(poly)} vertices`, {sticky:true});
+    slot.layer.addLayer(layer);
+  });
+  const fitVisiblePolygons = () => {
+    try {
+      slot.map.invalidateSize(true);
+      const bounds = slot.layer.getBounds();
+      if (bounds && bounds.isValid()) slot.map.fitBounds(bounds.pad(0.18), {animate:false});
+      else slot.map.setView([0,0], 2, {animate:false});
+    } catch (err){
+      console.warn('Could not fit polygon map:', err);
+    }
+  };
+  fitVisiblePolygons();
+  setTimeout(fitVisiblePolygons, 80);
+  setTimeout(fitVisiblePolygons, 260);
+}
+function safeRenderMapSlot(id, target, polygons, opts={}){
+  try {
+    renderMapSlot(id, target, polygons, opts);
+  } catch (err){
+    console.warn(`Map render failed for ${id}; using built-in preview.`, err);
+    destroyMapSlot(id);
+    renderSvg(polygons, target, opts);
+  }
+}
+function renderPreviews(){
+  const shared = state.simplifiedPolygons.length ? state.polygons.concat(state.simplifiedPolygons) : state.polygons;
+  const current = currentWizardStep();
+  if (current === 'results'){
+    safeRenderMapSlot('result', els.resultMap, state.polygons, {empty:'Polygon map will appear after upload.', bboxPolygons:shared, fill:'rgba(22,100,214,.12)', stroke:'#1664d6'});
+  }
+  if (current === 'compare'){
+    safeRenderMapSlot('original', els.originalPreview, state.polygons, {empty:'Original polygons will appear here.', bboxPolygons:shared, fill:'rgba(22,100,214,.12)', stroke:'#1664d6'});
+    safeRenderMapSlot('simplified', els.simplifiedPreview, state.simplifiedPolygons, {empty:'After simplification, the changed copy will appear here.', bboxPolygons:shared, fill:'rgba(217,44,50,.12)', stroke:'#d92c32'});
+  }
+  if (els.resultMapMeta) els.resultMapMeta.textContent = state.polygons.length ? `${totalVertices(state.polygons)} vertices · ${polygonCount(state.polygons)} polygons` : 'Original polygon(s)';
+  els.originalMeta.textContent = state.polygons.length ? `${totalVertices(state.polygons)} vertices · ${polygonCount(state.polygons)} polygons` : 'Nothing loaded';
+  els.simplifiedMeta.textContent = state.simplifiedPolygons.length ? `${totalVertices(state.simplifiedPolygons)} vertices · ${polygonCount(state.simplifiedPolygons)} polygons` : 'Not created';
+}
+function renderDetailTable(){
+  if (!state.polygons.length){
+    els.detailTable.innerHTML = 'No polygon detail yet.';
+    return;
+  }
+  const rows = state.polygons.map((poly, i) => {
+    const v = polygonVertexCount(poly);
+    const status = v >= LIMIT_VERTICES ? '<span class="status-pill bad">large</span>' : '<span class="status-pill good">ok</span>';
+    return `<tr><td>${i+1}</td><td>${escapeHtml(poly.sourceFile)}</td><td>${escapeHtml(poly.format)}</td><td>${v}</td><td>${poly.rings.length}</td><td>${status}</td></tr>`;
+  }).join('');
+  els.detailTable.innerHTML = `<table class="table"><thead><tr><th>#</th><th>File</th><th>Format</th><th>Vertices</th><th>Rings</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function isLimitPass(){
+  return state.polygons.length > 0 && totalVertices(state.polygons) < LIMIT_VERTICES && polygonCount(state.polygons) <= LIMIT_POLYGONS;
+}
+function isLimitFail(){
+  return state.polygons.length > 0 && !isLimitPass();
+}
+function currentWizardStep(){
+  const hasFiles = state.files.length > 0;
+  if (!hasFiles || state.stage === 'upload') return 'upload';
+  if (state.stage === 'compare') return 'compare';
+  if (state.stage === 'fix' && isLimitFail()) return 'fix';
+  return 'results';
+}
+function showOnlyNeededSteps(){
+  const current = currentWizardStep();
+  els.step1.hidden = current !== 'upload';
+  els.step2.hidden = current !== 'results';
+  els.step3.hidden = current !== 'fix';
+  els.step4.hidden = current !== 'compare';
+}
+function renderActionFlow(){
+  const hasPolys = state.polygons.length > 0;
+  const v = totalVertices(state.polygons);
+  const p = polygonCount(state.polygons);
+  const pass = isLimitPass();
+  const fail = isLimitFail();
+  const current = currentWizardStep();
+  els.passExportBox.classList.toggle('hidden', !(pass && current === 'results'));
+  els.nextActionBox.classList.toggle('hidden', !(fail && current === 'results'));
+  if (fail){
+    const reasons = [];
+    if (v >= LIMIT_VERTICES) reasons.push('reduce the vertex count');
+    if (p > LIMIT_POLYGONS) reasons.push('reduce the number of individual polygons');
+    els.nextActionText.textContent = `This needs a fix: ${reasons.join(' and ')}.`;
+  }
+  const vertexFail = hasPolys && v >= LIMIT_VERTICES;
+  const polygonFail = hasPolys && p > LIMIT_POLYGONS;
+  els.simplifyBlock.classList.toggle('hidden', !vertexFail || polygonFail);
+  els.fixPolygonCountBlock.classList.toggle('hidden', !polygonFail);
+}
+function renderButtons(){
+  const hasPolys = state.polygons.length > 0;
+  const hasSimple = state.simplifiedPolygons.length > 0;
+  const current = currentWizardStep();
+  els.exportOriginalKmlBtn.disabled = !hasPolys;
+  if (els.exportOriginalCompareKmlBtn) els.exportOriginalCompareKmlBtn.disabled = !hasPolys;
+  const needsSimplify = hasPolys && totalVertices(state.polygons) >= LIMIT_VERTICES && polygonCount(state.polygons) <= LIMIT_POLYGONS;
+  els.simplifyBtn.disabled = !needsSimplify;
+  const simplifiedPass = hasSimple && totalVertices(state.simplifiedPolygons) < LIMIT_VERTICES && polygonCount(state.simplifiedPolygons) <= LIMIT_POLYGONS;
+  if (els.exportSimplifiedKmlBtn) els.exportSimplifiedKmlBtn.disabled = !simplifiedPass;
+  if (els.exportSimplifiedGeojsonBtn) els.exportSimplifiedGeojsonBtn.disabled = !simplifiedPass;
+  els.app.classList.toggle('has-simplified', hasSimple);
+  if (els.goFixBtn) els.goFixBtn.classList.toggle('is-idle', !(current === 'results' && isLimitFail()));
+  if (els.simplifyBtn) els.simplifyBtn.classList.toggle('is-idle', !(current === 'fix' && needsSimplify));
+  renderActionFlow();
+}
+function render(){
+  renderVerdict();
+  renderStats();
+  renderMessages();
+  renderFileList();
+  renderDetailTable();
+  renderButtons();
+  showOnlyNeededSteps();
+  renderPreviews();
+}
+
+function polygonToGeoJsonFeature(poly, index){
+  return {type:'Feature', properties:{sourceFile: poly.sourceFile, label: poly.label || `Polygon ${index+1}`, originalFormat: poly.format}, geometry:{type:'Polygon', coordinates: poly.rings.map(closeRing)}};
+}
+function polygonsToGeoJson(polygons){
+  return {type:'FeatureCollection', features: polygons.map(polygonToGeoJsonFeature)};
+}
+function coordToKml(p){
+  return `${cleanNumber(p[0])},${cleanNumber(p[1])},0`;
+}
+function ringToKml(ring, tag){
+  const coords = closeRing(ring).map(coordToKml).join(' ');
+  if (tag === 'outerBoundaryIs') return `<outerBoundaryIs><LinearRing><coordinates>${coords}</coordinates></LinearRing></outerBoundaryIs>`;
+  return `<innerBoundaryIs><LinearRing><coordinates>${coords}</coordinates></LinearRing></innerBoundaryIs>`;
+}
+function polygonsToKml(polygons, docName){
+  const placemarks = polygons.map((poly, idx) => {
+    const outer = poly.rings[0] ? ringToKml(poly.rings[0], 'outerBoundaryIs') : '';
+    const inners = poly.rings.slice(1).map(r => ringToKml(r, 'innerBoundaryIs')).join('');
+    const name = escapeHtml(poly.label || poly.sourceFile || `Polygon ${idx+1}`);
+    const desc = escapeHtml(`${polygonVertexCount(poly)} vertices. Source: ${poly.sourceFile || 'unknown'}.`);
+    return `<Placemark><name>${name}</name><description>${desc}</description><Polygon><tessellate>1</tessellate>${outer}${inners}</Polygon></Placemark>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${escapeHtml(docName)}</name>${placemarks}</Document></kml>`;
+}
+function downloadText(filename, text, mime){
+  const blob = new Blob([text], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function dateStamp(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+}
+function exportOriginalKml(){
+  if (!state.polygons.length) return;
+  downloadText(`ausalert_original_polygons_${dateStamp()}.kml`, polygonsToKml(state.polygons, 'AusAlert original polygons'), 'application/vnd.google-earth.kml+xml');
+}
+function exportSimplifiedKml(){
+  if (!state.simplifiedPolygons.length) return;
+  downloadText(`ausalert_simplified_polygons_${dateStamp()}.kml`, polygonsToKml(state.simplifiedPolygons, 'AusAlert simplified polygons'), 'application/vnd.google-earth.kml+xml');
+}
+function exportSimplifiedGeojson(){
+  if (!state.simplifiedPolygons.length) return;
+  downloadText(`ausalert_simplified_polygons_${dateStamp()}.geojson`, JSON.stringify(polygonsToGeoJson(state.simplifiedPolygons), null, 2), 'application/geo+json');
+}
+function clearAll(){
+  state.files = [];
+  state.polygons = [];
+  state.simplifiedPolygons = [];
+  state.hadUnsupported = false;
+  state.stage = 'upload';
+  state.batchProcessing = false;
+  state.nextPulseDone = false;
+  els.fileInput.value = '';
+  rebuildPolygonsFromFiles();
+  render();
+}
+
+els.dropZone.addEventListener('click', () => els.fileInput.click());
+els.dropZone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); els.fileInput.click(); } });
+els.fileInput.addEventListener('change', (e) => processFiles(e.target.files));
+['dragenter','dragover'].forEach(evt => els.dropZone.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); els.dropZone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(evt => els.dropZone.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); els.dropZone.classList.remove('dragover'); }));
+els.dropZone.addEventListener('drop', (e) => processFiles(e.dataTransfer.files));
+els.clearBtn.addEventListener('click', clearAll);
+els.addMoreBtn.addEventListener('click', () => els.fileInput.click());
+els.goResultsBtn.addEventListener('animationend', () => els.goResultsBtn.classList.remove('flash'));
+els.goResultsBtn.addEventListener('click', goToResults);
+els.backToUploadBtn.addEventListener('click', () => { state.stage = 'upload'; state.simplifiedPolygons = []; render(); window.scrollTo({top:0, behavior:'smooth'}); });
+els.backToResultsBtn.addEventListener('click', () => { state.stage = 'results'; render(); window.scrollTo({top:0, behavior:'smooth'}); });
+els.backToFixBtn.addEventListener('click', () => { state.stage = 'fix'; render(); window.scrollTo({top:0, behavior:'smooth'}); });
+els.goFixBtn.addEventListener('click', () => { state.stage = 'fix'; render(); window.scrollTo({top:0, behavior:'smooth'}); });
+els.simplifyBtn.addEventListener('click', showSimplifyModal);
+els.cancelSimplifyBtn.addEventListener('click', hideSimplifyModal);
+els.confirmSimplifyBtn.addEventListener('click', () => { hideSimplifyModal(); simplifyToTarget(); });
+els.simplifyModal.addEventListener('click', (e) => { if (e.target === els.simplifyModal) hideSimplifyModal(); });
+els.exportOriginalKmlBtn.addEventListener('click', exportOriginalKml);
+if (els.exportOriginalCompareKmlBtn) els.exportOriginalCompareKmlBtn.addEventListener('click', exportOriginalKml);
+if (els.exportSimplifiedKmlBtn) els.exportSimplifiedKmlBtn.addEventListener('click', exportSimplifiedKml);
+if (els.exportSimplifiedGeojsonBtn) els.exportSimplifiedGeojsonBtn.addEventListener('click', exportSimplifiedGeojson);
+
+render();
+</script>
+</body>
+</html>
