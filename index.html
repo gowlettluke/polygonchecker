@@ -39,7 +39,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
   <header class="topbar">
     <div class="title">AusAlert Polygon Limit Checker<small>Step by step. Only what is needed.</small></div>
     <div class="spacer"></div>
-    <div class="legend"><span class="swatch original"></span>Original <span class="swatch simple"></span>Simplified</div>
+    <div class="legend"><span class="swatch original"></span>Original <span class="swatch simple"></span>Fixed KML</div>
     <button id="clearBtn">Clear / Start again</button>
   </header>
 
@@ -50,7 +50,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
         <div id="dropZone" class="drop" tabindex="0" role="button" aria-label="Drop polygon files or click to upload">
           <div class="drop-icon">⬇️</div>
           <div class="drop-title">Drop files here or click to choose</div>
-          <div class="drop-sub">Use <strong>KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, or CSV</strong> for checking. AusAlert upload formats are still only KML, GML, GeoJSON/JSON, and SHP.</div>
+          <div class="drop-sub">Use <strong>KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, CSV, or WKT</strong> for checking. AusAlert upload formats are still only KML, GML, GeoJSON/JSON, and SHP.</div>
         </div>
         <input id="fileInput" class="hidden" type="file" multiple accept="*/*" />
         <div class="simple-note">
@@ -83,8 +83,8 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
           <section class="stats">
             <div id="vertexStat" class="stat"><div class="stat-label">Combined vertices</div><div class="stat-value">—</div><div class="stat-note">Limit: under 100</div></div>
             <div id="polygonStat" class="stat"><div class="stat-label">Individual polygons</div><div class="stat-value">—</div><div class="stat-note">Limit: 10 or fewer</div></div>
-            <div id="formatStat" class="stat"><div class="stat-label">Readable files</div><div class="stat-value">—</div><div class="stat-note">KML, KMZ, GML, GeoJSON, SHP/ZIP, TopoJSON, CSV</div></div>
-            <div id="simplifiedStat" class="stat"><div class="stat-label">Simplified vertices</div><div class="stat-value">—</div><div class="stat-note">Only after fixing</div></div>
+            <div id="formatStat" class="stat"><div class="stat-label">Readable files</div><div class="stat-value">—</div><div class="stat-note">KML, KMZ, GML, GeoJSON, SHP/ZIP, TopoJSON, CSV, WKT</div></div>
+            <div id="simplifiedStat" class="stat"><div class="stat-label">Fixed KML vertices</div><div class="stat-value">—</div><div class="stat-note">Only after fixing</div></div>
           </section>
         </div>
 
@@ -133,7 +133,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
             <button id="simplifyBtn" class="warning big-action progress-cta progress-cta-warning" disabled>⚠️ Simplify and convert to KML</button>
           </div>
         </div>
-        <div id="simplifiedNotice" class="message warn has-simplified-block"><strong>Important:</strong> simplified output is a changed copy. Check the shape in the next step before using it in AusAlert.</div>
+        <div id="simplifiedNotice" class="message warn has-simplified-block"><strong>Important:</strong> the fixed KML output must be checked before using it in AusAlert.</div>
       </div>
     </section>
 
@@ -146,14 +146,14 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
             <div id="originalPreview" class="map-wrap"><div class="empty-preview">Original polygons will appear here.</div></div>
           </div>
           <div class="preview-card">
-            <div class="preview-head"><span class="preview-title">Simplified copy</span><span id="simplifiedMeta" class="preview-meta">Not created</span></div>
-            <div id="simplifiedPreview" class="map-wrap"><div class="empty-preview">After simplification, the changed copy will appear here.</div></div>
+            <div class="preview-head"><span class="preview-title">Fixed KML output</span><span id="simplifiedMeta" class="preview-meta">Not created</span></div>
+            <div id="simplifiedPreview" class="map-wrap"><div class="empty-preview">The fixed KML output will appear here.</div></div>
           </div>
         </div>
-        <div class="message warn"><strong>Do a visual check:</strong> the simplified polygon is not identical. Confirm it still matches what you intend before uploading to AusAlert.</div>
+        <div class="message warn"><strong>Do a visual check:</strong> if the shape was simplified it will not be identical. Confirm the fixed KML still matches what you intend before uploading to AusAlert.</div>
         <div class="final-download-area">
           <div class="final-download-panel">
-            <div class="final-download-copy"><strong>Ready to export</strong>Download the simplified polygon as a KML file after checking the shape.</div>
+            <div class="final-download-copy"><strong>Ready to export</strong>Download the fixed KML file after checking the shape.</div>
             <button id="exportSimplifiedKmlBtn" class="final-kml-button" disabled>Download KML</button>
           </div>
         </div>
@@ -186,7 +186,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
 const LIMIT_VERTICES = 100;
 const TARGET_SIMPLIFIED_VERTICES = 99;
 const LIMIT_POLYGONS = 10;
-const SUPPORTED_EXTS = new Set(['kml','kmz','gml','geojson','json','shp','zip','topojson','topo','csv']);
+const SUPPORTED_EXTS = new Set(['kml','kmz','gml','geojson','json','shp','zip','topojson','topo','csv','wkt']);
 const AUSALERT_UPLOAD_EXTS = new Set(['kml','gml','geojson','json','shp']);
 
 const state = {
@@ -462,6 +462,7 @@ function parseZipLike(buffer, filename, preferredMode){
     if (lower.endsWith('.geojson') || lower.endsWith('.json')) return parseGeoJson(uint8ToText(bytes), base).map(p => ({...p, format: 'ZIP/GeoJSON'}));
     if (lower.endsWith('.topojson') || lower.endsWith('.topo')) return parseTopoJson(uint8ToText(bytes), base).map(p => ({...p, format: 'ZIP/TopoJSON'}));
     if (lower.endsWith('.csv')) return parseCsv(uint8ToText(bytes), base).map(p => ({...p, format: 'ZIP/CSV'}));
+    if (lower.endsWith('.wkt')) return parseWkt(uint8ToText(bytes), base).map(p => ({...p, format: 'ZIP/WKT'}));
     if (lower.endsWith('.shp')) return parseShp(bytesToArrayBuffer(bytes), base).map(p => ({...p, format: 'ZIP/SHP'}));
     return [];
   }
@@ -474,7 +475,7 @@ function parseZipLike(buffer, filename, preferredMode){
       return ad - bd || a.localeCompare(b);
     });
   } else {
-    parseNames = names.filter(n => /\.(kml|gml|xml|geojson|json|topojson|topo|csv|shp)$/i.test(n));
+    parseNames = names.filter(n => /\.(kml|gml|xml|geojson|json|topojson|topo|csv|wkt|shp)$/i.test(n));
   }
   const errors = [];
   for (const name of parseNames){
@@ -486,7 +487,7 @@ function parseZipLike(buffer, filename, preferredMode){
   }
   if (!polygons.length){
     if (preferredMode === 'KMZ') throw new Error(errors.length ? `KMZ opened, but no usable polygon KML was found. ${errors[0]}` : 'KMZ opened, but no KML polygon file was found inside it.');
-    throw new Error(errors.length ? `ZIP opened, but no usable polygon file was found. ${errors[0]}` : 'ZIP opened, but no KML, GML, GeoJSON, TopoJSON, CSV, or SHP polygon file was found inside it.');
+    throw new Error(errors.length ? `ZIP opened, but no usable polygon file was found. ${errors[0]}` : 'ZIP opened, but no KML, GML, GeoJSON, TopoJSON, CSV, WKT, or SHP polygon file was found inside it.');
   }
   return polygons;
 }
@@ -499,14 +500,18 @@ function parseZip(buffer, filename){
 
 
 function topoDecodeArc(rawArc, transform){
+  const arc = rawArc || [];
+  if (!transform){
+    return arc.map(pair => [Number(pair[0]), Number(pair[1])]).filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+  }
   let x = 0, y = 0;
-  const scale = transform?.scale || [1, 1];
-  const translate = transform?.translate || [0, 0];
-  return (rawArc || []).map(pair => {
+  const scale = transform.scale || [1, 1];
+  const translate = transform.translate || [0, 0];
+  return arc.map(pair => {
     x += Number(pair[0]) || 0;
     y += Number(pair[1]) || 0;
     return [x * scale[0] + translate[0], y * scale[1] + translate[1]];
-  });
+  }).filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
 }
 function topoArcPoints(topology, arcIndex){
   const reverse = arcIndex < 0;
@@ -533,7 +538,7 @@ function parseTopoJsonObject(obj, filename){
   const polygons = [];
   function addPolygonFromArcs(arcs, label){
     const rings = (arcs || []).map(ringArcs => topoRingPoints(obj, ringArcs));
-    const poly = normalisePolygon(rings, filename, 'TopoJSON', label);
+    const poly = normalisePolygon(rings, filename, obj.transform ? 'TopoJSON' : 'TopoJSON absolute coordinates', label);
     if (poly) polygons.push(poly);
   }
   function walkGeom(geom, label){
@@ -609,6 +614,13 @@ function parseWktPolygons(wkt, filename){
   }
   return polygons;
 }
+
+function parseWkt(text, filename){
+  const polygons = parseWktPolygons(text, filename).map(p => ({...p, format:'WKT'}));
+  if (!polygons.length) throw new Error('No POLYGON or MULTIPOLYGON geometry was found in this WKT file.');
+  return polygons;
+}
+
 function parseCsv(text, filename){
   const rows = parseCsvRows(text);
   if (rows.length < 2) throw new Error('CSV needs a header row and at least one data row.');
@@ -734,16 +746,18 @@ async function processFiles(files){
         else if (ext === 'geojson' || ext === 'json') polygons = parseGeoJson(text, file.name);
         else if (ext === 'topojson' || ext === 'topo') polygons = parseTopoJson(text, file.name);
         else if (ext === 'csv') polygons = parseCsv(text, file.name);
+        else if (ext === 'wkt') polygons = parseWkt(text, file.name);
         else {
           record.supported = false;
           record.status = 'unsupported';
-          record.message = 'This standalone checker cannot read this file type directly. Upload KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, or CSV.';
+          record.message = 'This standalone checker cannot read this file type directly. Upload KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, CSV, or WKT.';
           record.rawText = text;
           rebuildPolygonsFromFiles();
           render();
           continue;
         }
       }
+      polygons = maybeNormalizeCoordinates(polygons, file.name);
       record.polygons = polygons;
       record.status = 'ok';
       record.message = AUSALERT_UPLOAD_EXTS.has(ext) ? 'Checked successfully.' : 'Readable for checking, but not an AusAlert upload format. Use the final exported KML.';
@@ -876,6 +890,39 @@ function simplifyClosedRing(ring, epsilon){
   simplified = stripClosingPoint(simplified);
   return ensureAtLeastTriangle(pts, simplified);
 }
+
+function forEachPoint(polygons, fn){
+  polygons.forEach(poly => poly.rings.forEach(ring => ring.forEach(fn)));
+}
+function cloneWithCoordinateTransform(polygons, transform, extraFormatNote){
+  return polygons.map(poly => ({
+    ...poly,
+    format: extraFormatNote ? `${poly.format} (${extraFormatNote})` : poly.format,
+    rings: poly.rings.map(ring => ring.map(p => transform(p)))
+  }));
+}
+function looksLikeWebMercator(polygons){
+  const bbox = allBBox(polygons);
+  if (!bbox) return false;
+  const maxAbsX = Math.max(Math.abs(bbox.minX), Math.abs(bbox.maxX));
+  const maxAbsY = Math.max(Math.abs(bbox.minY), Math.abs(bbox.maxY));
+  return maxAbsX > 180 && maxAbsX <= 20037509 && maxAbsY > 90 && maxAbsY <= 20037509;
+}
+function webMercatorToLonLat(p){
+  const x = Number(p[0]), y = Number(p[1]);
+  const lon = x / 20037508.34 * 180;
+  let lat = y / 20037508.34 * 180;
+  lat = 180 / Math.PI * (2 * Math.atan(Math.exp(lat * Math.PI / 180)) - Math.PI / 2);
+  return [lon, lat];
+}
+function maybeNormalizeCoordinates(polygons, filename){
+  if (coordinatesLookGeographic(polygons)) return polygons;
+  if (looksLikeWebMercator(polygons)){
+    const converted = cloneWithCoordinateTransform(polygons, webMercatorToLonLat, 'Web Mercator converted to lon/lat');
+    if (coordinatesLookGeographic(converted)) return converted;
+  }
+  return polygons;
+}
 function allBBox(polygons){
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   polygons.forEach(poly => poly.rings.forEach(ring => ring.forEach(p => {
@@ -895,7 +942,7 @@ function simplifyToTarget(){
   if (originalVertices < LIMIT_VERTICES){
     state.simplifiedPolygons = clonePolygons(original);
     state.stage = 'compare';
-    toast('Already under 100 vertices. A matching copy was created.');
+    toast('Converted to KML output. Check the shape before use.');
     render();
     return;
   }
@@ -923,7 +970,7 @@ function simplifyToTarget(){
   }
   state.simplifiedPolygons = best;
   state.stage = 'compare';
-  toast(`Simplified from ${originalVertices} to ${totalVertices(best)} vertices. Check the changed shape before use.`);
+  toast(`Fixed KML created: simplified from ${originalVertices} to ${totalVertices(best)} vertices. Check the changed shape before use.`);
   render();
 }
 
@@ -986,9 +1033,9 @@ function renderStats(){
   renderStat(els.vertexStat, state.files.length ? String(v) : '—', state.files.length ? (v < LIMIT_VERTICES ? 'OK: below 100' : 'Bad: 100 or more') : 'Limit: under 100', state.files.length ? (v < LIMIT_VERTICES ? 'good' : 'bad') : '');
   renderStat(els.polygonStat, state.files.length ? String(p) : '—', state.files.length ? (p <= LIMIT_POLYGONS ? 'OK: 10 or fewer' : 'Bad: more than 10') : 'Limit: 10 or fewer', state.files.length ? (p <= LIMIT_POLYGONS ? 'good' : 'bad') : '');
   const formatClass = errors || unsupported || checkingOnly ? 'warn' : (state.files.length ? 'good' : '');
-  renderStat(els.formatStat, state.files.length ? `${supportedOk}/${state.files.length}` : '—', state.files.length ? `${unsupported} unreadable, ${errors} error${errors===1?'':'s'}${checkingOnly ? `, ${checkingOnly} checking-only` : ''}` : 'Reads KML/KMZ/GML/GeoJSON/SHP/ZIP/TopoJSON/CSV', formatClass);
+  renderStat(els.formatStat, state.files.length ? `${supportedOk}/${state.files.length}` : '—', state.files.length ? `${unsupported} unreadable, ${errors} error${errors===1?'':'s'}${checkingOnly ? `, ${checkingOnly} checking-only` : ''}` : 'Reads KML/KMZ/GML/GeoJSON/SHP/ZIP/TopoJSON/CSV/WKT', formatClass);
   const sv = totalVertices(state.simplifiedPolygons);
-  renderStat(els.simplifiedStat, state.simplifiedPolygons.length ? String(sv) : '—', state.simplifiedPolygons.length ? (sv < LIMIT_VERTICES ? 'Simplified copy is under 100' : 'Still 100 or more') : 'Created only if requested', state.simplifiedPolygons.length ? (sv < LIMIT_VERTICES ? 'good' : 'bad') : '');
+  renderStat(els.simplifiedStat, state.simplifiedPolygons.length ? String(sv) : '—', state.simplifiedPolygons.length ? (sv < LIMIT_VERTICES ? 'Fixed KML is under 100' : 'Still 100 or more') : 'Created only if requested', state.simplifiedPolygons.length ? (sv < LIMIT_VERTICES ? 'good' : 'bad') : '');
 }
 function renderMessages(){
   const messages = [];
@@ -998,7 +1045,7 @@ function renderMessages(){
     if (p > LIMIT_POLYGONS) messages.push(`<div class="message bad big-message"><strong>Polygon fail:</strong> ${p} individual polygons. AusAlert allows 10 or fewer.</div>`);
     if (v < LIMIT_VERTICES && p <= LIMIT_POLYGONS) messages.push(`<div class="message good big-message"><strong>Pass:</strong> the checked polygons are inside both limits.</div>`);
   }
-  if (state.files.some(f => f.status === 'unsupported')) messages.push(`<div class="message warn"><strong>Unreadable file present:</strong> this file type cannot be checked by this standalone tool. Upload KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, or CSV.</div>`);
+  if (state.files.some(f => f.status === 'unsupported')) messages.push(`<div class="message warn"><strong>Unreadable file present:</strong> this file type cannot be checked by this standalone tool. Upload KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, CSV, or WKT.</div>`);
   if (state.files.some(f => ['ok','converted'].includes(f.status) && !AUSALERT_UPLOAD_EXTS.has(f.ext))) messages.push(`<div class="message warn big-message"><strong>Format warning:</strong> one or more uploaded files were readable for checking, but are not AusAlert upload formats. AusAlert upload formats are KML, GML, GeoJSON/JSON, and SHP. Use the fix step to convert it to KML.</div>`);
   if (state.files.some(f => f.status === 'converted')) messages.push(`<div class="message warn"><strong>Converted file present:</strong> conversion is experimental. Export and check the result before AusAlert use.</div>`);
   els.limitMessages.innerHTML = messages.join('');
@@ -1028,7 +1075,7 @@ function fileCardsHtml({allowRemove=false, compactUpload=false}={}){
       const message = file.status === 'loading'
         ? 'Reading file…'
         : file.status === 'unsupported'
-          ? 'This file type cannot be checked directly here. Upload KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, or CSV.'
+          ? 'This file type cannot be checked directly here. Upload KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, CSV, or WKT.'
           : file.status === 'error'
             ? (file.message || 'Could not read this file.')
             : file.status === 'converted'
@@ -1184,7 +1231,7 @@ function renderMapSlot(id, target, polygons, opts={}){
       note.style.border = '1px solid #d8dde3';
       note.style.borderRadius = '10px';
       note.style.padding = '8px 10px';
-      note.textContent = 'Coordinate values do not look like latitude/longitude, so this is a shape preview rather than a web map.';
+      note.textContent = 'Coordinates are not latitude/longitude, so this is only a shape preview. Convert the source to WGS84 lon/lat before using it in AusAlert.';
       target.style.position = 'relative';
       target.appendChild(note);
     }
@@ -1252,7 +1299,7 @@ function renderPreviews(){
   }
   if (current === 'compare'){
     safeRenderMapSlot('original', els.originalPreview, state.polygons, {empty:'Original polygons will appear here.', bboxPolygons:shared, fill:'rgba(22,100,214,.12)', stroke:'#1664d6'});
-    safeRenderMapSlot('simplified', els.simplifiedPreview, state.simplifiedPolygons, {empty:'After simplification, the changed copy will appear here.', bboxPolygons:shared, fill:'rgba(217,44,50,.12)', stroke:'#d92c32'});
+    safeRenderMapSlot('simplified', els.simplifiedPreview, state.simplifiedPolygons, {empty:'The fixed KML output will appear here.', bboxPolygons:shared, fill:'rgba(217,44,50,.12)', stroke:'#d92c32'});
   }
   if (els.resultMapMeta) els.resultMapMeta.textContent = state.polygons.length ? `${totalVertices(state.polygons)} vertices · ${polygonCount(state.polygons)} polygons` : 'Original polygon(s)';
   els.originalMeta.textContent = state.polygons.length ? `${totalVertices(state.polygons)} vertices · ${polygonCount(state.polygons)} polygons` : 'Nothing loaded';
