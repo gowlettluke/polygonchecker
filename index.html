@@ -227,9 +227,60 @@ const els = {
 function escapeHtml(value){
   return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+
+function fallbackAreaName(filename){
+  return String(filename||'Area')
+    .replace(/\.(kml|kmz|xml|txt)$/i,'')
+    .replace(/[_-]+/g,' ')
+    .trim() || 'Area';
+}
 function getExt(name){
   const parts = String(name || '').split('.');
   return parts.length > 1 ? parts.pop().toLowerCase() : '';
+}
+
+function sniffTextGeometryFormat(text){
+  const s=String(text||'').replace(/^\uFEFF/,'').trimStart();
+  if (/^(?:<\?xml[\s\S]*?)?<kml\b/i.test(s)) return 'kml';
+  if (/<gml:/i.test(s) || /xmlns:gml\s*=\s*["']http:\/\/www\.opengis\.net\/gml/i.test(s)) return 'gml';
+  if (/^[\[{]/.test(s)){
+    try {
+      const obj=JSON.parse(s);
+      if (obj && typeof obj==='object'){
+        if (obj.type==='Topology') return 'topojson';
+        if (obj.type || obj.features) return 'geojson';
+      }
+    } catch(_){}
+  }
+  if (/^\s*(?:POLYGON|MULTIPOLYGON|LINESTRING|MULTILINESTRING)\s*\(/i.test(s)) return 'wkt';
+  return '';
+}
+function sniffBinaryGeometryFormat(buffer){
+  if (!buffer) return '';
+  const bytes=new Uint8Array(buffer);
+  if (bytes.length>=4 && bytes[0]===0x50 && bytes[1]===0x4b && [0x03,0x05,0x07].includes(bytes[2])) return 'zip';
+  const head=new TextDecoder('utf-8',{fatal:false}).decode(bytes.slice(0,80));
+  if (/MSMAMARPCRYPT/i.test(head)) return 'protected';
+  if (bytes.length>=4){
+    try {
+      if (new DataView(buffer).getInt32(0,false)===9994) return 'shp';
+    } catch(_){}
+  }
+  return '';
+}
+function effectiveTextExtension(filename,text){
+  const ext=getExt(filename);
+  const detected=sniffTextGeometryFormat(text);
+  if (detected && (!ext || ext==='txt' || ext==='xml' || !SUPPORTED_EXTS.has(ext))) return detected;
+  return ext;
+}
+function exactDuplicateCleanup(path){
+  const pts=cleanCoordinatePath(path);
+  const out=[];
+  pts.forEach(p=>{
+    if (!out.length || !isSamePoint(out[out.length-1],p)) out.push(p);
+  });
+  return out;
 }
 function localName(node){
   return (node.localName || node.nodeName || '').split(':').pop();
@@ -468,9 +519,10 @@ function convertGeometryItemsToPolygons(polygons){
 function normalisePolygon(rings, sourceFile, format, label, declaredType='Polygon'){
   const cleaned = [], ringClosed = [];
   (rings || []).forEach(raw => {
-    const pts = cleanCoordinatePath(raw);
-    if (!pts.length) return;
-    const wasClosed = pathWasClosed(pts);
+    const rawPts = cleanCoordinatePath(raw);
+    if (!rawPts.length) return;
+    const wasClosed = pathWasClosed(rawPts);
+    const pts = exactDuplicateCleanup(rawPts);
     cleaned.push(stripClosingPoint(pts));
     ringClosed.push(wasClosed);
   });
@@ -480,9 +532,10 @@ function normalisePolygon(rings, sourceFile, format, label, declaredType='Polygo
 function normaliseLine(paths, sourceFile, format, label, declaredType='LineString'){
   const geometries = [];
   (paths || []).forEach((raw, index) => {
-    const pts = cleanCoordinatePath(raw);
-    if (!pts.length) return;
-    const wasClosed = pathWasClosed(pts);
+    const rawPts = cleanCoordinatePath(raw);
+    if (!rawPts.length) return;
+    const wasClosed = pathWasClosed(rawPts);
+    const pts = exactDuplicateCleanup(rawPts);
     geometries.push({
       geometryType:'line', declaredType, rings:[stripClosingPoint(pts)], ringClosed:[wasClosed], sourceFile, format,
       label: (paths || []).length > 1 ? `${label || sourceFile} ${index+1}` : (label || sourceFile)
@@ -616,7 +669,7 @@ function assessGmlCompatibility(text, geometries){
   const safelyConvertible=onlyCircles && bad.every(c=>c.circleProfile?.sourceCoordinateKnown && c.radiusUnitKnown);
   return {
     ok:false, fixable:safelyConvertible, kind:'gml-circle',
-    message:safelyConvertible?'This GML circle is readable but needs a format correction before use.':'This GML circle cannot be safely rewritten automatically because its coordinate reference or radius units are not recognised.',
+    message:safelyConvertible?'This GML circle needs a small format correction before use.':'This GML circle can be read, but it cannot be fixed safely automatically.',
     details:['True GML circles must use the supported GML 3.2 centre-and-radius profile.'],
     fixLabel:safelyConvertible?'Fix GML circle':''
   };
@@ -652,7 +705,7 @@ function assessZipCompatibility(buffer){
 function fileUploadReady(record){
   if (!record || !['ok','converted'].includes(record.status)) return false;
   if (record.compatibility) return record.compatibility.ok===true;
-  return AUSALERT_UPLOAD_EXTS.has(record.ext);
+  return AUSALERT_UPLOAD_EXTS.has(record.effectiveExt || record.ext);
 }
 function compatibilityProblemRecords(){
   return state.files.filter(f=>['ok','converted'].includes(f.status) && !fileUploadReady(f));
@@ -695,9 +748,11 @@ function parseGml(text, filename){
     if (!pos || !radiusNode) return;
     const raw=parseFlatNumberList(directText(pos),2)[0];
     const radiusValue=Number(directText(radiusNode));
-    const radiusUom=(radiusNode.getAttribute('uom')||'').toLowerCase();
-    const radiusMultiplier=radiusUom==='m'?1:(radiusUom==='km'?1000:null);
-    const radius=radiusMultiplier?radiusValue*radiusMultiplier:radiusValue;
+    const radiusUom=(radiusNode.getAttribute('uom')||'').trim().toLowerCase();
+    const metreUnits=new Set(['m','meter','meters','metre','metres','urn:ogc:def:uom:ogc::m']);
+    const kilometreUnits=new Set(['km','kilometer','kilometers','kilometre','kilometres','urn:ogc:def:uom:ogc::km']);
+    const radiusMultiplier=metreUnits.has(radiusUom)?1:(kilometreUnits.has(radiusUom)?1000:null);
+    const radius=radiusMultiplier!==null?radiusValue*radiusMultiplier:radiusValue;
     if (!raw || !Number.isFinite(radius) || radius<=0) return;
     const curve=ancestorByLocalName(node,'Curve');
     const axis=(curve?.getAttribute('axisLabels')||'').trim().replace(/\s+/g,' ');
@@ -709,6 +764,7 @@ function parseGml(text, filename){
     const circle=normaliseCircle(center,radius,filename,'GML',`True circle ${idx+1}`,profile);
     if (circle){
       circle.radiusUnitKnown=radiusMultiplier!==null;
+      circle.originalRadiusUnit=radiusUom;
       geometries.push(circle);
     }
   });
@@ -1125,56 +1181,99 @@ async function processFiles(files){
 
   for (const file of list){
     const ext = getExt(file.name);
-    const record = {name:file.name, size:file.size, ext:ext || 'none', supported:SUPPORTED_EXTS.has(ext), status:'loading', message:'Reading file…', polygons:[], convertAttempt:null, fileRef:file, compatibility:null, rawText:''};
+    const record = {name:file.name, size:file.size, ext:ext || 'none', effectiveExt:ext || '', detectedExt:'', supported:SUPPORTED_EXTS.has(ext), status:'loading', message:'Reading file…', polygons:[], convertAttempt:null, fileRef:file, compatibility:null, rawText:''};
     state.files.push(record);
     rebuildPolygonsFromFiles();
     render();
     try {
       let polygons = [];
-      if (ext === 'shp'){
-        polygons = parseShp(await readFileBuffer(file), file.name);
+      let workingExt=ext;
+      let buffer=null;
+      let text=null;
+
+      // Detect protected/encrypted files and obvious binary formats before parsing.
+      if (['shp','kmz','zip'].includes(ext) || !ext){
+        try {
+          buffer=await readFileBuffer(file);
+          const detectedBinary=sniffBinaryGeometryFormat(buffer);
+          if (detectedBinary==='protected'){
+            record.supported=false;
+            record.status='unsupported';
+            record.message='This file is protected or encrypted. Export an unprotected copy and upload that instead.';
+            rebuildPolygonsFromFiles();
+            render();
+            continue;
+          }
+          if (!workingExt && detectedBinary==='zip') workingExt='zip';
+          if (!workingExt && detectedBinary==='shp') workingExt='shp';
+        } catch(_){}
+      }
+
+      if (workingExt === 'shp'){
+        polygons = parseShp(buffer || await readFileBuffer(file), file.name);
         record.compatibility={ok:false,fixable:false,kind:'shapefile',message:'A .shp file by itself is not a complete upload package. ZIP the matching .shp, .shx, .dbf and .prj files together.',details:['Standalone .shp is checking-only.']};
-      } else if (ext === 'kmz'){
-        polygons = parseKmz(await readFileBuffer(file), file.name);
+      } else if (workingExt === 'kmz'){
+        polygons = parseKmz(buffer || await readFileBuffer(file), file.name);
         record.compatibility={ok:false,fixable:true,kind:'checking-only',message:'KMZ is readable here but should be converted to an accepted upload format.',details:[],fixLabel:'Convert to KML'};
-      } else if (ext === 'zip'){
-        const buffer=await readFileBuffer(file);
+      } else if (workingExt === 'zip'){
+        buffer=buffer || await readFileBuffer(file);
         record.compatibility=assessZipCompatibility(buffer);
         polygons = record.compatibility?.kind==='shapefile' ? parseShapefilePackage(buffer,file.name) : parseZip(buffer, file.name);
       } else {
-        const text = await readFileText(file);
+        text = await readFileText(file);
         record.rawText=text;
-        if (ext === 'kml'){
+        const detectedText=effectiveTextExtension(file.name,text);
+        if (detectedText && detectedText!==workingExt){
+          workingExt=detectedText;
+          record.detectedExt=detectedText;
+          record.supported=true;
+        }
+        record.effectiveExt=workingExt;
+
+        if (workingExt === 'kml'){
           polygons = parseKml(text, file.name);
           record.compatibility=assessKmlCompatibility(text,file.name);
-        } else if (ext === 'gml'){
+          if (record.detectedExt && ext!=='kml'){
+            record.compatibility.ok=false;
+            record.compatibility.fixable=true;
+            record.compatibility.details.unshift('The filename does not use the .kml extension.');
+            record.compatibility.message='KML content was recognised, but the file needs a clean .kml copy before use.';
+          }
+        } else if (workingExt === 'gml'){
           polygons = parseGml(text, file.name);
           record.compatibility=assessGmlCompatibility(text,polygons);
-        } else if (ext === 'geojson' || ext === 'json'){
+          if (record.detectedExt && ext!=='gml'){
+            record.compatibility.ok=false;
+            record.compatibility.fixable=record.compatibility.fixable || polygons.every(p=>p.geometryType!=='circle' || (p.circleProfile?.sourceCoordinateKnown && p.radiusUnitKnown));
+            record.compatibility.details.unshift('The filename does not use the .gml extension.');
+          }
+        } else if (workingExt === 'geojson' || workingExt === 'json'){
           polygons = parseGeoJson(text, file.name);
           record.compatibility={ok:true,fixable:false,kind:'geojson',message:'GeoJSON checks passed.',details:[]};
-        } else if (ext === 'topojson' || ext === 'topo'){
+        } else if (workingExt === 'topojson' || workingExt === 'topo'){
           polygons = parseTopoJson(text, file.name);
           record.compatibility={ok:false,fixable:true,kind:'checking-only',message:'Readable for checking, but convert it before upload.',details:[],fixLabel:'Convert to KML'};
-        } else if (ext === 'csv'){
+        } else if (workingExt === 'csv'){
           polygons = parseCsv(text, file.name);
           record.compatibility={ok:false,fixable:true,kind:'checking-only',message:'Readable for checking, but convert it before upload.',details:[],fixLabel:'Convert to KML'};
-        } else if (ext === 'wkt'){
+        } else if (workingExt === 'wkt'){
           polygons = parseWkt(text, file.name);
           record.compatibility={ok:false,fixable:true,kind:'checking-only',message:'Readable for checking, but convert it before upload.',details:[],fixLabel:'Convert to KML'};
         } else {
           record.supported = false;
           record.status = 'unsupported';
-          record.message = 'This standalone checker cannot read this file type directly. Upload KML, KMZ, GML, GeoJSON/JSON, Shapefile ZIP, SHP, TopoJSON, CSV, or WKT.';
+          record.message = 'This file could not be recognised as a supported geometry format.';
           rebuildPolygonsFromFiles();
           render();
           continue;
         }
       }
-      if (record.rawText && ext!=='kml' && hasBlockedUploadText(record.rawText)){
+      record.effectiveExt=workingExt || ext;
+      if (record.rawText && (record.effectiveExt || ext)!=='kml' && hasBlockedUploadText(record.rawText)){
         const hasCircle=(polygons||[]).some(p=>p.geometryType==='circle');
         const allCircles=(polygons||[]).length>0 && (polygons||[]).every(p=>p.geometryType==='circle');
-        const canFix=ext==='gml' ? (allCircles ? !!record.compatibility?.fixable || !!record.compatibility?.ok : !hasCircle) : (ext==='geojson'||ext==='json');
+        const effectiveExt=record.effectiveExt || ext;
+        const canFix=effectiveExt==='gml' ? (allCircles ? !!record.compatibility?.fixable || !!record.compatibility?.ok : !hasCircle) : (effectiveExt==='geojson'||effectiveExt==='json');
         record.compatibility={ok:false,fixable:canFix,kind:allCircles?'gml-circle':'blocked-content',message:'The file contains text content that can be blocked during upload.',details:['A clean geometry-only copy is required before use.'],fixLabel:canFix?(allCircles?'Fix GML circle':'Create clean KML'):''};
       }
       const beforeNormalise=polygons;
