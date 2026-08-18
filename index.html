@@ -491,9 +491,36 @@ function normaliseLine(paths, sourceFile, format, label, declaredType='LineStrin
   return geometries;
 }
 
+function repairKmlForParsing(text){
+  let repaired=String(text||'');
+  const repairs=[];
+  const usesXsiPrefix=/\bxsi:[A-Za-z_][\w.-]*\s*=/.test(repaired);
+  const declaresXsi=/\bxmlns:xsi\s*=\s*["'][^"']+["']/.test(repaired);
+  if (usesXsiPrefix && !declaresXsi){
+    const before=repaired;
+    repaired=repaired.replace(/<kml\b([^>]*)>/i,(match,attrs)=>`<kml${attrs} xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">`);
+    if (repaired!==before) repairs.push('missing-xsi-namespace');
+  }
+  return {text:repaired,repairs};
+}
+
+function parseKmlXmlRecoverable(text){
+  const source=String(text||'');
+  let doc=new DOMParser().parseFromString(source,'application/xml');
+  if (!doc.querySelector('parsererror')) return {doc,text:source,repairs:[]};
+
+  const repaired=repairKmlForParsing(source);
+  if (repaired.text!==source){
+    doc=new DOMParser().parseFromString(repaired.text,'application/xml');
+    if (!doc.querySelector('parsererror')) return {doc,text:repaired.text,repairs:repaired.repairs};
+  }
+
+  throw new Error('Could not read this KML/XML file. The XML is malformed and could not be repaired safely.');
+}
+
 function parseKml(text, filename){
-  const doc = new DOMParser().parseFromString(text, 'application/xml');
-  if (doc.querySelector('parsererror')) throw new Error('Could not read this KML/XML file.');
+  const parsed=parseKmlXmlRecoverable(text);
+  const doc=parsed.doc;
   const geometries = [];
   descendantsByLocalName(doc, 'Polygon').forEach((node, idx) => {
     const rings = descendantsByLocalName(node, 'coordinates').map(c => parseCoordinateTuples(directText(c))).filter(r => r.length);
@@ -527,8 +554,12 @@ function parseShapefilePackage(buffer, filename){
 }
 function assessKmlCompatibility(text, filename){
   const issues=[];
-  const doc=new DOMParser().parseFromString(text,'application/xml');
+  const parsed=parseKmlXmlRecoverable(text);
+  const doc=parsed.doc;
   const root=doc.documentElement;
+  if (parsed.repairs.includes('missing-xsi-namespace')){
+    issues.push('KML uses an xsi: attribute without declaring the xsi XML namespace.');
+  }
   if (!root || localName(root)!=='kml' || root.namespaceURI!==KML22_NS) issues.push('KML is not a KML 2.2 namespaced document.');
   if (/<!\[CDATA\[/i.test(text)) issues.push('KML contains CDATA content that can be blocked during upload.');
   if (/\bjavascript\b/i.test(text) || /<\s*script\b/i.test(text) || /\binner\s*HTML\b/i.test(text)) issues.push('KML contains script-like content that can be blocked during upload.');
