@@ -50,13 +50,13 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
         <div id="dropZone" class="drop" tabindex="0" role="button" aria-label="Drop polygon or line files or click to upload">
           <div class="drop-icon">⬇️</div>
           <div class="drop-title">Drop files here or click to choose</div>
-          <div class="drop-sub">Use <strong>KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, CSV, or WKT</strong> for checking. AusAlert upload formats are still only KML, GML, GeoJSON/JSON, and SHP.</div>
+          <div class="drop-sub">Use <strong>KML, KMZ, GML, GeoJSON/JSON, Shapefile ZIP, SHP, TopoJSON, CSV, or WKT</strong> for checking. Upload-ready formats are KML, GML, GeoJSON/JSON, and complete Shapefile ZIP packages.</div>
         </div>
         <input id="fileInput" class="hidden" type="file" multiple accept="*/*" />
         <div class="simple-note">
-          <div class="note-tile"><strong>Vertex rule:</strong> combined vertices must be <strong>under 100</strong>.</div>
-          <div class="note-tile"><strong>Polygon rule:</strong> up to <strong>10</strong> individual polygons is okay.</div>
-          <div class="note-tile"><strong>Bad:</strong> <strong>100+</strong> vertices or <strong>more than 10</strong> polygons.</div>
+          <div class="note-tile"><strong>Coordinate rule:</strong> combined coordinates must be <strong>under 100</strong>.</div>
+          <div class="note-tile"><strong>Area rule:</strong> up to <strong>10</strong> individual areas is okay.</div>
+          <div class="note-tile"><strong>Bad:</strong> <strong>100+</strong> coordinates or <strong>more than 10</strong> areas.</div>
         </div>
         <div id="uploadPanel" class="upload-panel hidden">
           <div class="upload-panel-head"><div class="upload-panel-title">Uploaded files</div><div id="uploadCount" class="hint">0 files</div></div>
@@ -81,10 +81,10 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
             <div><div class="verdict-title">Waiting for files</div><div class="verdict-text">Drop polygon files into Step 1.</div></div>
           </div>
           <section class="stats">
-            <div id="vertexStat" class="stat"><div class="stat-label">Combined vertices</div><div class="stat-value">—</div><div class="stat-note">Limit: under 100</div></div>
-            <div id="polygonStat" class="stat"><div class="stat-label">Polygon outputs</div><div class="stat-value">—</div><div class="stat-note">Limit: 10 or fewer</div></div>
-            <div id="formatStat" class="stat"><div class="stat-label">Readable files</div><div class="stat-value">—</div><div class="stat-note">KML, KMZ, GML, GeoJSON, SHP/ZIP, TopoJSON, CSV, WKT</div></div>
-            <div id="simplifiedStat" class="stat"><div class="stat-label">Fixed KML vertices</div><div class="stat-value">—</div><div class="stat-note">Only after fixing</div></div>
+            <div id="vertexStat" class="stat"><div class="stat-label">Combined coordinates</div><div class="stat-value">—</div><div class="stat-note">Limit: under 100</div></div>
+            <div id="polygonStat" class="stat"><div class="stat-label">Area outputs</div><div class="stat-value">—</div><div class="stat-note">Limit: 10 or fewer</div></div>
+            <div id="formatStat" class="stat"><div class="stat-label">Readable files</div><div class="stat-value">—</div><div class="stat-note">KML, GML, GeoJSON, Shapefile ZIP</div></div>
+            <div id="simplifiedStat" class="stat"><div class="stat-label">Fixed coordinates</div><div class="stat-value">—</div><div class="stat-note">Only after fixing</div></div>
           </section>
         </div>
 
@@ -96,8 +96,8 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
         </div>
 
         <div id="passExportBox" class="next-action good hidden">
-          <div><div class="next-title">This is inside the limits</div><div class="next-text">No simplification is needed. Download a KML copy if you need one.</div></div>
-          <button id="exportOriginalKmlBtn" class="primary big-action" disabled>Download original KML</button>
+          <div><div class="next-title">This is inside the limits</div><div class="next-text">No fix is needed. You can use the original file.</div></div>
+          <button id="exportOriginalKmlBtn" class="primary big-action" disabled>Download KML copy</button>
         </div>
 
         <div class="map-card">
@@ -135,7 +135,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
         </div>
         <div id="simplifyBlock" class="fix-panel hidden">
           <div class="action-box" style="border:0;background:transparent;padding:0">
-            <div><div class="action-title">Make a changed KML copy under 100 vertices</div><div class="action-text">This uses simple line simplification and exports as KML. The shape will change, so the next step makes you compare the original and fixed KML before export.</div></div>
+            <div><div class="action-title">Make a changed copy under 100 coordinates</div><div class="action-text">This reduces the number of coordinates and exports a clean KML copy. The shape will change, so the next step makes you compare the original and fixed output before export.</div></div>
             <button id="simplifyBtn" class="warning big-action progress-cta progress-cta-warning" disabled>⚠️ Simplify and convert to KML</button>
           </div>
         </div>
@@ -144,7 +144,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
     </section>
 
     <section id="step4" class="step" hidden>
-      <div class="step-head"><div class="step-head-main"><span class="step-num">4</span><div><div class="step-title">Compare and export</div><div class="step-subtitle">Blue is the original. Red is the fixed KML output. Check the shape, then download the KML.</div></div></div><div class="step-head-actions"><button id="backToFixBtn" class="back-btn">← Back</button></div></div>
+      <div class="step-head"><div class="step-head-main"><span class="step-num">4</span><div><div class="step-title">Compare and export</div><div class="step-subtitle">Blue is the original. Red is the fixed output. Check the shape, then download it.</div></div></div><div class="step-head-actions"><button id="backToFixBtn" class="back-btn">← Back</button></div></div>
       <div class="step-body">
         <div class="compare-grid">
           <div class="preview-card">
@@ -152,14 +152,14 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
             <div id="originalPreview" class="map-wrap"><div class="empty-preview">Original geometry will appear here.</div></div>
           </div>
           <div class="preview-card">
-            <div class="preview-head"><span class="preview-title">Fixed KML output</span><span id="simplifiedMeta" class="preview-meta">Not created</span></div>
+            <div class="preview-head"><span class="preview-title">Fixed output</span><span id="simplifiedMeta" class="preview-meta">Not created</span></div>
             <div id="simplifiedPreview" class="map-wrap"><div class="empty-preview">The fixed KML output will appear here.</div></div>
           </div>
         </div>
         <div class="message warn"><strong>Do a visual check:</strong> if the shape was simplified it will not be identical. Confirm the fixed KML still matches what you intend before uploading to AusAlert.</div>
         <div class="final-download-area">
           <div class="final-download-panel">
-            <div class="final-download-copy"><strong>Ready to export</strong>Download the fixed KML file after checking the shape.</div>
+            <div class="final-download-copy"><strong>Ready to export</strong>Download the fixed file after checking the shape.</div>
             <button id="exportSimplifiedKmlBtn" class="final-kml-button" disabled>Download KML</button>
           </div>
         </div>
@@ -189,7 +189,10 @@ const LIMIT_VERTICES = 100;
 const TARGET_SIMPLIFIED_VERTICES = 99;
 const LIMIT_POLYGONS = 10;
 const SUPPORTED_EXTS = new Set(['kml','kmz','gml','geojson','json','shp','zip','topojson','topo','csv','wkt']);
-const AUSALERT_UPLOAD_EXTS = new Set(['kml','gml','geojson','json','shp']);
+const AUSALERT_UPLOAD_EXTS = new Set(['kml','gml','geojson','json','zip']);
+const KML22_NS = 'http://www.opengis.net/kml/2.2';
+const GML32_NS = 'http://www.opengis.net/gml/3.2';
+const GML_CIRCLE_CRS84 = 'urn:ogc:def:crs:OGC::CRS84';
 
 const state = {
   files: [],
@@ -201,7 +204,10 @@ const state = {
   nextPulseDone: false,
   pendingFixMode: null,
   fixedAction: '',
-  fixedOutputValid: false
+  fixedOutputValid: false,
+  fixedOutputFormat: 'kml',
+  fixedOutputText: '',
+  fixedOutputFilename: ''
 };
 
 const $ = (id) => document.getElementById(id);
@@ -245,6 +251,46 @@ function descendantsByLocalName(node, wanted){
 }
 function directText(node){
   return node ? (node.textContent || '').trim() : '';
+}
+
+function ancestorByLocalName(node, wanted){
+  const target=String(wanted||'').toLowerCase();
+  let current=node?.parentElement || null;
+  while (current){
+    if (localName(current).toLowerCase()===target) return current;
+    current=current.parentElement;
+  }
+  return null;
+}
+function firstAncestor(node, names){
+  for (const name of names){
+    const found=ancestorByLocalName(node,name);
+    if (found) return found;
+  }
+  return null;
+}
+function circleApproxRing(center, radiusMetres, steps=72){
+  const lon=Number(center?.[0]), lat=Number(center?.[1]), radius=Number(radiusMetres);
+  if (![lon,lat,radius].every(Number.isFinite) || radius<=0) return [];
+  const earth=6371008.8, angular=radius/earth;
+  const lat1=lat*Math.PI/180, lon1=lon*Math.PI/180;
+  const pts=[];
+  for (let i=0;i<steps;i++){
+    const bearing=2*Math.PI*i/steps;
+    const lat2=Math.asin(Math.sin(lat1)*Math.cos(angular)+Math.cos(lat1)*Math.sin(angular)*Math.cos(bearing));
+    const lon2=lon1+Math.atan2(Math.sin(bearing)*Math.sin(angular)*Math.cos(lat1),Math.cos(angular)-Math.sin(lat1)*Math.sin(lat2));
+    pts.push([((lon2*180/Math.PI+540)%360)-180,lat2*180/Math.PI]);
+  }
+  return pts;
+}
+function normaliseCircle(center, radiusMetres, sourceFile, format, label, profile={}){
+  const ring=circleApproxRing(center,radiusMetres);
+  if (!ring.length) return null;
+  return {
+    geometryType:'circle', declaredType:'CircleByCenterPoint', rings:[ring], ringClosed:[true],
+    center:[Number(center[0]),Number(center[1])], radiusMetres:Number(radiusMetres),
+    sourceFile, format, label:label||sourceFile, circleProfile:profile
+  };
 }
 function parseCoordinateTuples(text){
   const tuples = String(text || '').trim().split(/\s+/).filter(Boolean);
@@ -291,6 +337,7 @@ function ringVertexCount(ring){
   return stripClosingPoint(ring).length;
 }
 function polygonVertexCount(poly){
+  if (poly?.geometryType==='circle') return 1;
   return (poly.rings || []).reduce((sum, ring) => sum + ringVertexCount(ring), 0);
 }
 function totalVertices(polygons){
@@ -308,6 +355,7 @@ function clonePolygons(polygons){
 }
 function geometryNeedsFix(poly){
   if (!poly) return false;
+  if (poly.geometryType === 'circle') return false;
   if (poly.geometryType === 'line') return true;
   const closed = Array.isArray(poly.ringClosed) ? poly.ringClosed : (poly.rings || []).map(() => true);
   return closed.some(v => !v);
@@ -326,6 +374,7 @@ function openPathCount(polygons){
   }, 0);
 }
 function geometryTypeLabel(poly){
+  if (poly.geometryType === 'circle') return 'True circle';
   if (poly.geometryType === 'line') return poly.declaredType || 'LineString';
   return geometryNeedsFix(poly) ? 'Open polygon' : 'Polygon';
 }
@@ -375,6 +424,7 @@ function ringHasSelfIntersection(path){
   return false;
 }
 function validateGeometryForClosure(poly){
+  if (poly?.geometryType==='circle') return {fixable:true,reasons:[]};
   const reasons = [];
   (poly.rings || []).forEach((ring, index) => {
     const label = (poly.rings || []).length > 1 ? `ring ${index+1}` : 'path';
@@ -447,15 +497,137 @@ function parseKml(text, filename){
   const geometries = [];
   descendantsByLocalName(doc, 'Polygon').forEach((node, idx) => {
     const rings = descendantsByLocalName(node, 'coordinates').map(c => parseCoordinateTuples(directText(c))).filter(r => r.length);
-    const poly = normalisePolygon(rings, filename, 'KML', `Polygon ${idx+1}`);
+    const placemark=ancestorByLocalName(node,'Placemark');
+    const nameNode=placemark?Array.from(placemark.children||[]).find(c=>localName(c)==='name'):null;
+    const label=directText(nameNode)||String(filename||`Polygon ${idx+1}`).replace(/\.[^.]+$/,'');
+    const poly = normalisePolygon(rings, filename, 'KML', label);
     if (poly) geometries.push(poly);
   });
   descendantsByLocalName(doc, 'LineString').forEach((node, idx) => {
     const paths = descendantsByLocalName(node, 'coordinates').map(c => parseCoordinateTuples(directText(c))).filter(r => r.length);
-    geometries.push(...normaliseLine(paths, filename, 'KML', `LineString ${idx+1}`, 'LineString'));
+    const placemark=ancestorByLocalName(node,'Placemark');
+    const nameNode=placemark?Array.from(placemark.children||[]).find(c=>localName(c)==='name'):null;
+    const label=directText(nameNode)||String(filename||`LineString ${idx+1}`).replace(/\.[^.]+$/,'');
+    geometries.push(...normaliseLine(paths, filename, 'KML', label, 'LineString'));
   });
   if (!geometries.length) throw new Error('No Polygon or LineString coordinates were found in this KML.');
   return geometries;
+}
+
+
+function hasBlockedUploadText(text){
+  const t=String(text||'');
+  return /<!\[CDATA\[/i.test(t) || /\bjavascript\b/i.test(t) || /\binner\s*HTML\b/i.test(t) || /<\s*script\b/i.test(t);
+}
+function parseShapefilePackage(buffer, filename){
+  const entries=zipEntriesFromBuffer(buffer);
+  const shpName=Object.keys(entries).find(n=>/\.shp$/i.test(n) && !n.endsWith('/'));
+  if (!shpName) throw new Error('No .shp file was found in this ZIP.');
+  return parseShp(bytesToArrayBuffer(entries[shpName]),`${filename} / ${shpName}`).map(p=>({...p,format:'ZIP/SHP'}));
+}
+function assessKmlCompatibility(text, filename){
+  const issues=[];
+  const doc=new DOMParser().parseFromString(text,'application/xml');
+  const root=doc.documentElement;
+  if (!root || localName(root)!=='kml' || root.namespaceURI!==KML22_NS) issues.push('KML is not a KML 2.2 namespaced document.');
+  if (/<!\[CDATA\[/i.test(text)) issues.push('KML contains CDATA content that can be blocked during upload.');
+  if (/\bjavascript\b/i.test(text) || /<\s*script\b/i.test(text) || /\binner\s*HTML\b/i.test(text)) issues.push('KML contains script-like content that can be blocked during upload.');
+  const descriptions=descendantsByLocalName(doc,'description');
+  if (descriptions.some(node=>directText(node)!=='' || node.children.length>0)) issues.push('KML description content must be empty.');
+  const names=descendantsByLocalName(doc,'name').map(directText).filter(Boolean);
+  if (!names.length) issues.push('KML has no usable name.');
+  return {
+    ok:issues.length===0,
+    fixable:true,
+    kind:'kml',
+    message:issues.length?'This KML needs cleaning before it is ready to use.':'KML format checks passed.',
+    details:issues,
+    fixLabel:'Clean and fix KML'
+  };
+}
+function gmlCircleProfile(circleNode){
+  const curve=ancestorByLocalName(circleNode,'Curve');
+  const location=ancestorByLocalName(circleNode,'location');
+  const dynamicFeature=ancestorByLocalName(circleNode,'DynamicFeature');
+  const collection=ancestorByLocalName(circleNode,'FeatureCollection');
+  const rootNs=circleNode.ownerDocument?.documentElement?.namespaceURI || '';
+  const srsName=curve?.getAttribute('srsName') || '';
+  const axisLabels=(curve?.getAttribute('axisLabels') || '').trim().replace(/\s+/g,' ');
+  const uomLabels=(curve?.getAttribute('uomLabels') || '').trim().replace(/\s+/g,' ');
+  const srsDimension=curve?.getAttribute('srsDimension') || '';
+  const posNodes=descendantsByLocalName(circleNode,'pos');
+  const radiusNodes=descendantsByLocalName(circleNode,'radius');
+  const attrs={
+    namespace32:rootNs===GML32_NS,
+    featureCollection:!!collection,
+    dynamicFeature:!!dynamicFeature,
+    location:!!location,
+    directCurve:!!curve && curve.parentElement===location,
+    crs84:srsName===GML_CIRCLE_CRS84,
+    lonLat:axisLabels==='longitude latitude',
+    degreeUnits:uomLabels==='deg deg',
+    dimension2:String(srsDimension)==='2',
+    numArcOne:circleNode.getAttribute('numArc')==='1',
+    onePosition:posNodes.length===1,
+    oneRadius:radiusNodes.length===1,
+    radiusMetres:radiusNodes.length===1 && (radiusNodes[0].getAttribute('uom')||'').toLowerCase()==='m',
+    sourceCoordinateKnown:srsName===GML_CIRCLE_CRS84 || (/EPSG/i.test(srsName) && /4326/.test(srsName))
+  };
+  attrs.ok=Object.values(attrs).every(v=>v===true);
+  return attrs;
+}
+function assessGmlCompatibility(text, geometries){
+  const circles=(geometries||[]).filter(g=>g.geometryType==='circle');
+  if (!circles.length) return {ok:true,fixable:false,kind:'gml',message:'GML geometry was read successfully.',details:[]};
+  const bad=circles.filter(c=>!c.circleProfile?.ok);
+  if (!bad.length) return {ok:true,fixable:false,kind:'gml-circle',message:`${circles.length} true circle${circles.length===1?'':'s'} passed the GML circle checks.`,details:[]};
+  const onlyCircles=(geometries||[]).every(g=>g.geometryType==='circle');
+  const safelyConvertible=onlyCircles && bad.every(c=>c.circleProfile?.sourceCoordinateKnown && c.radiusUnitKnown);
+  return {
+    ok:false, fixable:safelyConvertible, kind:'gml-circle',
+    message:safelyConvertible?'This GML circle is readable but needs a format correction before use.':'This GML circle cannot be safely rewritten automatically because its coordinate reference or radius units are not recognised.',
+    details:['True GML circles must use the supported GML 3.2 centre-and-radius profile.'],
+    fixLabel:safelyConvertible?'Fix GML circle':''
+  };
+}
+function shapefileBase(path){
+  return String(path||'').replace(/\\/g,'/').replace(/\.[^.\/]+$/,'').toLowerCase();
+}
+function prjIsWgs84LonLat(text){
+  const t=String(text||'').replace(/\s+/g,' ').toUpperCase();
+  if (!t) return false;
+  if (/\bPROJCS\s*\[|\bPROJCRS\s*\[/.test(t)) return false;
+  const wgs=/WGS[_ ]?1984|WGS[_ ]?84/.test(t);
+  const geographic=/GEOGCS\s*\[|GEOGCRS\s*\[|GEODCRS\s*\[/.test(t);
+  const degree=/UNIT\s*\[\s*["']?DEGREE|ANGLEUNIT\s*\[\s*["']?DEGREE/.test(t);
+  const epsg4326=/AUTHORITY\s*\[\s*["']EPSG["']\s*,\s*["']4326["']\s*\]|ID\s*\[\s*["']EPSG["']\s*,\s*4326\s*\]/.test(t);
+  return epsg4326 || (wgs && geographic && degree);
+}
+function assessZipCompatibility(buffer){
+  const entries=zipEntriesFromBuffer(buffer);
+  const names=Object.keys(entries).filter(n=>!n.endsWith('/'));
+  const shpNames=names.filter(n=>/\.shp$/i.test(n));
+  if (!shpNames.length) return {ok:false,fixable:true,kind:'checking-only',message:'ZIP is readable for checking, but it is not a shapefile package ready for upload.',details:[],fixLabel:'Convert to KML'};
+  if (shpNames.length>1) return {ok:false,fixable:false,kind:'shapefile',message:'This ZIP contains multiple .shp files. Use one shapefile package per ZIP.',details:['Multiple shapefiles found.']};
+  const shp=shpNames[0], base=shapefileBase(shp);
+  const findExt=ext=>names.find(n=>shapefileBase(n)===base && new RegExp(`\\.${ext}$`,'i').test(n));
+  const shx=findExt('shx'), dbf=findExt('dbf'), prj=findExt('prj');
+  const missing=[['.shx',shx],['.dbf',dbf],['.prj',prj]].filter(x=>!x[1]).map(x=>x[0]);
+  if (missing.length) return {ok:false,fixable:false,kind:'shapefile',message:`Shapefile package is incomplete: missing ${missing.join(', ')}.`,details:missing.map(x=>`Missing ${x}`)};
+  const prjText=uint8ToText(entries[prj]);
+  if (!prjIsWgs84LonLat(prjText)) return {ok:false,fixable:false,kind:'shapefile',message:'Shapefile projection is not confirmed as WGS 84 longitude/latitude (EPSG:4326).',details:['Convert the shapefile to EPSG:4326 and create a new ZIP.']};
+  return {ok:true,fixable:false,kind:'shapefile',message:'Shapefile package and projection checks passed.',details:[]};
+}
+function fileUploadReady(record){
+  if (!record || !['ok','converted'].includes(record.status)) return false;
+  if (record.compatibility) return record.compatibility.ok===true;
+  return AUSALERT_UPLOAD_EXTS.has(record.ext);
+}
+function compatibilityProblemRecords(){
+  return state.files.filter(f=>['ok','converted'].includes(f.status) && !fileUploadReady(f));
+}
+function autoFixableCompatibilityRecords(){
+  return compatibilityProblemRecords().filter(f=>f.compatibility?.fixable);
 }
 
 function gmlPathsFromNode(node){
@@ -485,7 +657,32 @@ function parseGml(text, filename){
   const doc = new DOMParser().parseFromString(text, 'application/xml');
   if (doc.querySelector('parsererror')) throw new Error('Could not read this GML/XML file.');
   const geometries = [];
+  const circleNodes=descendantsByLocalName(doc,'CircleByCenterPoint');
+  circleNodes.forEach((node,idx)=>{
+    const pos=descendantsByLocalName(node,'pos')[0];
+    const radiusNode=descendantsByLocalName(node,'radius')[0];
+    if (!pos || !radiusNode) return;
+    const raw=parseFlatNumberList(directText(pos),2)[0];
+    const radiusValue=Number(directText(radiusNode));
+    const radiusUom=(radiusNode.getAttribute('uom')||'').toLowerCase();
+    const radiusMultiplier=radiusUom==='m'?1:(radiusUom==='km'?1000:null);
+    const radius=radiusMultiplier?radiusValue*radiusMultiplier:radiusValue;
+    if (!raw || !Number.isFinite(radius) || radius<=0) return;
+    const curve=ancestorByLocalName(node,'Curve');
+    const axis=(curve?.getAttribute('axisLabels')||'').trim().replace(/\s+/g,' ');
+    const srs=(curve?.getAttribute('srsName')||'').toUpperCase();
+    let center;
+    if (axis==='latitude longitude' || (srs.includes('EPSG') && srs.includes('4326') && axis!=='longitude latitude')) center=[raw[1],raw[0]];
+    else center=[raw[0],raw[1]];
+    const profile=gmlCircleProfile(node);
+    const circle=normaliseCircle(center,radius,filename,'GML',`True circle ${idx+1}`,profile);
+    if (circle){
+      circle.radiusUnitKnown=radiusMultiplier!==null;
+      geometries.push(circle);
+    }
+  });
   allDescendants(doc).filter(n => ['Polygon','Surface'].includes(localName(n))).forEach((node, idx) => {
+    if (descendantsByLocalName(node,'CircleByCenterPoint').length) return;
     const linearRings = descendantsByLocalName(node, 'LinearRing');
     const genericRings = linearRings.length ? [] : descendantsByLocalName(node, 'Ring');
     const containers = linearRings.length ? linearRings : (genericRings.length ? genericRings : [node]);
@@ -494,9 +691,10 @@ function parseGml(text, filename){
     if (poly) geometries.push(poly);
   });
   allDescendants(doc).filter(n => ['LineString','Curve'].includes(localName(n))).forEach((node, idx) => {
+    if (descendantsByLocalName(node,'CircleByCenterPoint').length) return;
     geometries.push(...normaliseLine(gmlPathsFromNode(node), filename, 'GML', `LineString ${idx+1}`, localName(node)));
   });
-  if (!geometries.length) throw new Error('No GML Polygon, Surface, LineString, or Curve geometry was found.');
+  if (!geometries.length) throw new Error('No supported GML Polygon, Surface, LineString, Curve, or true circle geometry was found.');
   return geometries;
 }
 
@@ -887,6 +1085,8 @@ async function processFiles(files){
   if (!list.length) return;
   state.simplifiedPolygons = [];
   state.fixedOutputValid = false;
+  state.fixedOutputText = '';
+  state.fixedOutputFilename = '';
   state.fixedAction = '';
   state.stage = 'upload';
   state.batchProcessing = true;
@@ -894,43 +1094,77 @@ async function processFiles(files){
 
   for (const file of list){
     const ext = getExt(file.name);
-    const record = {name:file.name, size:file.size, ext:ext || 'none', supported:SUPPORTED_EXTS.has(ext), status:'loading', message:'Reading file…', polygons:[], convertAttempt:null, fileRef:file};
+    const record = {name:file.name, size:file.size, ext:ext || 'none', supported:SUPPORTED_EXTS.has(ext), status:'loading', message:'Reading file…', polygons:[], convertAttempt:null, fileRef:file, compatibility:null, rawText:''};
     state.files.push(record);
     rebuildPolygonsFromFiles();
     render();
     try {
       let polygons = [];
-      if (ext === 'shp') polygons = parseShp(await readFileBuffer(file), file.name);
-      else if (ext === 'kmz') polygons = parseKmz(await readFileBuffer(file), file.name);
-      else if (ext === 'zip') polygons = parseZip(await readFileBuffer(file), file.name);
-      else {
+      if (ext === 'shp'){
+        polygons = parseShp(await readFileBuffer(file), file.name);
+        record.compatibility={ok:false,fixable:false,kind:'shapefile',message:'A .shp file by itself is not a complete upload package. ZIP the matching .shp, .shx, .dbf and .prj files together.',details:['Standalone .shp is checking-only.']};
+      } else if (ext === 'kmz'){
+        polygons = parseKmz(await readFileBuffer(file), file.name);
+        record.compatibility={ok:false,fixable:true,kind:'checking-only',message:'KMZ is readable here but should be converted to an accepted upload format.',details:[],fixLabel:'Convert to KML'};
+      } else if (ext === 'zip'){
+        const buffer=await readFileBuffer(file);
+        record.compatibility=assessZipCompatibility(buffer);
+        polygons = record.compatibility?.kind==='shapefile' ? parseShapefilePackage(buffer,file.name) : parseZip(buffer, file.name);
+      } else {
         const text = await readFileText(file);
-        if (ext === 'kml') polygons = parseKml(text, file.name);
-        else if (ext === 'gml') polygons = parseGml(text, file.name);
-        else if (ext === 'geojson' || ext === 'json') polygons = parseGeoJson(text, file.name);
-        else if (ext === 'topojson' || ext === 'topo') polygons = parseTopoJson(text, file.name);
-        else if (ext === 'csv') polygons = parseCsv(text, file.name);
-        else if (ext === 'wkt') polygons = parseWkt(text, file.name);
-        else {
+        record.rawText=text;
+        if (ext === 'kml'){
+          polygons = parseKml(text, file.name);
+          record.compatibility=assessKmlCompatibility(text,file.name);
+        } else if (ext === 'gml'){
+          polygons = parseGml(text, file.name);
+          record.compatibility=assessGmlCompatibility(text,polygons);
+        } else if (ext === 'geojson' || ext === 'json'){
+          polygons = parseGeoJson(text, file.name);
+          record.compatibility={ok:true,fixable:false,kind:'geojson',message:'GeoJSON checks passed.',details:[]};
+        } else if (ext === 'topojson' || ext === 'topo'){
+          polygons = parseTopoJson(text, file.name);
+          record.compatibility={ok:false,fixable:true,kind:'checking-only',message:'Readable for checking, but convert it before upload.',details:[],fixLabel:'Convert to KML'};
+        } else if (ext === 'csv'){
+          polygons = parseCsv(text, file.name);
+          record.compatibility={ok:false,fixable:true,kind:'checking-only',message:'Readable for checking, but convert it before upload.',details:[],fixLabel:'Convert to KML'};
+        } else if (ext === 'wkt'){
+          polygons = parseWkt(text, file.name);
+          record.compatibility={ok:false,fixable:true,kind:'checking-only',message:'Readable for checking, but convert it before upload.',details:[],fixLabel:'Convert to KML'};
+        } else {
           record.supported = false;
           record.status = 'unsupported';
-          record.message = 'This standalone checker cannot read this file type directly. Upload KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, CSV, or WKT.';
-          record.rawText = text;
+          record.message = 'This standalone checker cannot read this file type directly. Upload KML, KMZ, GML, GeoJSON/JSON, Shapefile ZIP, SHP, TopoJSON, CSV, or WKT.';
           rebuildPolygonsFromFiles();
           render();
           continue;
         }
       }
+      if (record.rawText && ext!=='kml' && hasBlockedUploadText(record.rawText)){
+        const hasCircle=(polygons||[]).some(p=>p.geometryType==='circle');
+        const allCircles=(polygons||[]).length>0 && (polygons||[]).every(p=>p.geometryType==='circle');
+        const canFix=ext==='gml' ? (allCircles ? !!record.compatibility?.fixable || !!record.compatibility?.ok : !hasCircle) : (ext==='geojson'||ext==='json');
+        record.compatibility={ok:false,fixable:canFix,kind:allCircles?'gml-circle':'blocked-content',message:'The file contains text content that can be blocked during upload.',details:['A clean geometry-only copy is required before use.'],fixLabel:canFix?(allCircles?'Fix GML circle':'Create clean KML'):''};
+      }
+      const beforeNormalise=polygons;
       polygons = maybeNormalizeCoordinates(polygons, file.name);
+      const autoProjected=polygons.some(p=>String(p.format||'').includes('Web Mercator converted to lon/lat'));
       record.polygons = polygons;
       record.status = 'ok';
+      if (autoProjected && record.compatibility?.ok){
+        record.compatibility={ok:false,fixable:!polygons.some(p=>p.geometryType==='circle'),kind:'projection',message:'The coordinates are not longitude/latitude and need conversion before use.',details:['Web Mercator coordinates were detected for preview.'],fixLabel:'Convert to KML'};
+      } else if (!coordinatesLookGeographic(polygons) && record.compatibility?.ok){
+        record.compatibility={ok:false,fixable:false,kind:'projection',message:'The coordinates are not confirmed as WGS 84 longitude/latitude.',details:['Convert the source to longitude/latitude coordinates and upload it again.']};
+      }
       const geometryProblems = geometryIssueCount(polygons);
       const invalidProblems = invalidGeometryAssessment(polygons).invalid;
-      record.message = geometryProblems
-        ? (invalidProblems
-          ? `Recognised ${geometryProblems} geometr${geometryProblems===1?'y':'ies'} with an open, degenerate, or self-intersecting path. It is shown on the map but fails the AusAlert check.`
-          : `Recognised ${geometryProblems} LineString or unclosed polygon geometr${geometryProblems===1?'y':'ies'}. It is readable and shown on the map, but must be connected before AusAlert use.`)
-        : (AUSALERT_UPLOAD_EXTS.has(ext) ? 'Checked successfully.' : 'Readable for checking, but not an AusAlert upload format. Use the final exported KML.');
+      if (geometryProblems){
+        record.message=invalidProblems
+          ? `Recognised ${geometryProblems} geometr${geometryProblems===1?'y':'ies'} with an open, degenerate, or self-intersecting path.`
+          : `Recognised ${geometryProblems} open geometr${geometryProblems===1?'y':'ies'} that must be connected first.`;
+      } else {
+        record.message=record.compatibility?.message || 'Checked successfully.';
+      }
     } catch (err){
       record.status = record.supported ? 'error' : 'unsupported';
       record.message = err?.message || 'Could not read this file.';
@@ -969,6 +1203,9 @@ function removeFile(index){
   state.files.splice(index, 1);
   state.simplifiedPolygons = [];
   state.fixedOutputValid = false;
+  state.fixedOutputFormat = 'kml';
+  state.fixedOutputText = '';
+  state.fixedOutputFilename = '';
   state.fixedAction = '';
   state.stage = 'upload';
   state.nextPulseDone = false;
@@ -981,6 +1218,9 @@ function goToResults(){
   state.stage = 'results';
   state.simplifiedPolygons = [];
   state.fixedOutputValid = false;
+  state.fixedOutputFormat = 'kml';
+  state.fixedOutputText = '';
+  state.fixedOutputFilename = '';
   state.fixedAction = '';
   rebuildPolygonsFromFiles();
   render();
@@ -989,13 +1229,34 @@ function goToResults(){
 
 function convertToKmlCopy(){
   if (!state.polygons.length || geometryFixAssessment().needed || hasInvalidGeometryProblem()) return;
+  const problems=compatibilityProblemRecords();
+  const gmlCircleProblems=problems.filter(f=>f.compatibility?.kind==='gml-circle' && f.compatibility?.fixable);
+  if (gmlCircleProblems.length===problems.length && problems.length>0 && state.polygons.every(p=>p.geometryType==='circle')){
+    const circles=clonePolygons(state.polygons);
+    state.simplifiedPolygons=circles;
+    state.fixedOutputText=circlesToCompatibleGml(circles,'True circles');
+    state.fixedOutputFormat='gml';
+    state.fixedOutputFilename=`fixed_true_circles_${dateStamp()}.gml`;
+    state.fixedAction='GML circle format corrected';
+    state.fixedOutputValid=true;
+    state.stage='compare';
+    toast('GML circle fixed. The centre and radius were preserved.');
+    render();
+    return;
+  }
+  if (state.polygons.some(p=>p.geometryType==='circle')){
+    toast('This mixed file cannot be safely converted automatically without changing a true circle.');
+    return;
+  }
   state.simplifiedPolygons = clonePolygons(state.polygons);
-  state.fixedAction = 'Converted to KML';
+  state.fixedOutputFormat='kml';
+  state.fixedOutputText=polygonsToKml(state.simplifiedPolygons,'Fixed polygons');
+  state.fixedOutputFilename=`fixed_polygons_${dateStamp()}.kml`;
+  state.fixedAction = problems.some(f=>f.compatibility?.kind==='kml') ? 'KML cleaned and corrected' : 'Converted to KML';
   state.fixedOutputValid = true;
   state.stage = 'compare';
-  toast('Converted to KML output. Check the shape before use.');
+  toast(`${state.fixedAction}. Check the shape before use.`);
   render();
-  window.scrollTo({top:0, behavior:'smooth'});
 }
 function showFixModal(mode='simplify'){
   if (!state.polygons.length) return;
@@ -1163,6 +1424,9 @@ function createFixedOutput(mode){
   state.simplifiedPolygons=output;
   state.fixedOutputValid=!impossible && totalVertices(output)<LIMIT_VERTICES && polygonCount(output)<=LIMIT_POLYGONS;
   state.fixedAction=connect && simplify ? 'Connected and simplified' : connect ? 'Connected to polygon' : 'Simplified';
+  state.fixedOutputFormat='kml';
+  state.fixedOutputText=polygonsToKml(output,'Fixed polygons');
+  state.fixedOutputFilename=`fixed_polygons_${dateStamp()}.kml`;
   state.stage='compare';
   if (impossible) toast('Even the most aggressive reduction cannot get this output below 100 vertices because there are too many rings or required triangle vertices.');
   else if (simplify) toast(`${state.fixedAction}: ${originalVertices} to ${totalVertices(output)} vertices. Check the changed shape before use.`);
@@ -1184,42 +1448,42 @@ function renderStat(el, value, note, cls){
   el.querySelector('.stat-note').textContent = note;
 }
 function renderVerdict(){
-  const v=totalVertices(state.polygons), p=polygonCount(state.polygons);
+  const v=totalVertices(state.polygons), p=polygonCount(state.polygons), circles=state.polygons.filter(g=>g.geometryType==='circle').length;
   els.verdict.className='verdict wait';
   if (!state.files.length){
     els.verdict.querySelector('.verdict-badge').textContent='?';
     els.verdict.querySelector('.verdict-title').textContent='Waiting for files';
-    els.verdict.querySelector('.verdict-text').textContent='Step 1: drop polygon or line files into the box above.';
+    els.verdict.querySelector('.verdict-text').textContent='Step 1: drop your mapping files into the box above.';
     return;
   }
   const hasParsed=p>0, unreadable=hasUnreadableProblem(), formatProblem=hasAusAlertFormatProblem();
   const failVertices=hasParsed && v>=LIMIT_VERTICES, failPolys=hasParsed && p>LIMIT_POLYGONS;
   const geometryProblem=hasParsed && hasGeometryFixProblem();
-  const assessment=geometryFixAssessment();
-  const invalidAssessment=invalidGeometryAssessment();
-  const invalidProblem=hasParsed && invalidAssessment.invalid;
+  const invalidProblem=hasParsed && invalidGeometryAssessment().invalid;
   if (hasParsed && !failVertices && !failPolys && !formatProblem && !unreadable && !geometryProblem && !invalidProblem){
     els.verdict.className='verdict pass';
     els.verdict.querySelector('.verdict-badge').textContent='✓';
-    els.verdict.querySelector('.verdict-title').textContent='YES — safe for AusAlert';
-    els.verdict.querySelector('.verdict-text').textContent=`The checked polygons have ${v} vertices, ${p} individual polygon${p===1?'':'s'}, are closed, and are already in an AusAlert upload format.`;
+    els.verdict.querySelector('.verdict-title').textContent='YES — ready to use';
+    const parts=[`${p} area${p===1?'':'s'}`,`${v} coordinate${v===1?'':'s'}`];
+    if (circles) parts.push(`${circles} true circle${circles===1?'':'s'}`);
+    els.verdict.querySelector('.verdict-text').textContent=`No issues detected. ${parts.join(' · ')}.`;
   } else if (hasParsed){
     els.verdict.className='verdict fail';
     els.verdict.querySelector('.verdict-badge').textContent='!';
-    els.verdict.querySelector('.verdict-title').textContent='NO — fix before AusAlert';
+    els.verdict.querySelector('.verdict-title').textContent='NO — an issue needs fixing';
     const reasons=[];
-    if (geometryProblem) reasons.push(`${assessment.itemCount} LineString or unclosed polygon geometr${assessment.itemCount===1?'y':'ies'}`);
-    if (invalidProblem) reasons.push('one or more paths are degenerate or self-intersecting');
-    if (failVertices) reasons.push(`${v} vertices; must be under 100`);
-    if (failPolys) reasons.push(`${p} polygon outputs; must be 10 or fewer`);
-    if (formatProblem) reasons.push('file type must be converted to KML for AusAlert');
-    if (unreadable) reasons.push('one or more files could not be read');
-    els.verdict.querySelector('.verdict-text').textContent=reasons.join('. ')+'.';
+    if (geometryProblem) reasons.push('open geometry');
+    if (invalidProblem) reasons.push('invalid geometry');
+    if (failVertices) reasons.push(`${v} coordinates; must be under 100`);
+    if (failPolys) reasons.push(`${p} area outputs; must be 10 or fewer`);
+    if (formatProblem) reasons.push('file format/structure issue');
+    if (unreadable) reasons.push('unreadable file');
+    els.verdict.querySelector('.verdict-text').textContent=reasons.join(' · ')+'.';
   } else {
     els.verdict.className='verdict fail';
     els.verdict.querySelector('.verdict-badge').textContent='!';
     els.verdict.querySelector('.verdict-title').textContent='No usable geometry found';
-    els.verdict.querySelector('.verdict-text').textContent='Use KML, KMZ, GML, GeoJSON/JSON, SHP, ZIP, TopoJSON, CSV, or WKT files containing polygons or lines.';
+    els.verdict.querySelector('.verdict-text').textContent='Use a supported mapping file containing an area or line.';
   }
 }
 function renderStats(){
@@ -1243,19 +1507,21 @@ function renderMessages(){
     const geometryParts=[];
     if (lines) geometryParts.push(`${lines} LineString${lines===1?'':'s'}`);
     if (openPaths) geometryParts.push(`${openPaths} unclosed path${openPaths===1?'':'s'}`);
-    if (!geometryParts.length) geometryParts.push(`${assessment.itemCount} geometr${assessment.itemCount===1?'y':'ies'} requiring polygon conversion`);
-    messages.push(`<div class="message bad big-message"><strong>Geometry fail:</strong> ${geometryParts.join(' and ')}. AusAlert requires valid closed polygon geometry.</div>`);
-    if (assessment.fixable) messages.push('<div class="message warn"><strong>Repair available:</strong> each separate line can be closed independently with one straight segment from its final coordinate to its first coordinate. The result will be checked and compared before export.</div>');
+    messages.push(`<div class="message bad big-message"><strong>Geometry issue:</strong> ${geometryParts.join(' and ')} must be closed before use.</div>`);
+    if (assessment.fixable) messages.push('<div class="message warn"><strong>Automatic fix available.</strong> Continue to the fix step.</div>');
   }
   if (invalidAssessment.invalid) messages.push(`<div class="message bad"><strong>Invalid geometry:</strong> ${escapeHtml(invalidAssessment.failures.join('; '))}.</div>`);
   if (state.polygons.length){
-    if (v>=LIMIT_VERTICES) messages.push(`<div class="message bad big-message"><strong>Vertex fail:</strong> ${v} combined vertices. AusAlert needs fewer than 100.</div>`);
-    if (p>LIMIT_POLYGONS) messages.push(`<div class="message bad big-message"><strong>Polygon fail:</strong> ${p} proposed polygon outputs. AusAlert allows 10 or fewer.</div>`);
-    if (v<LIMIT_VERTICES && p<=LIMIT_POLYGONS && !assessment.needed) messages.push('<div class="message good big-message"><strong>Pass:</strong> the checked polygons are closed and inside both limits.</div>');
+    if (v>=LIMIT_VERTICES) messages.push(`<div class="message bad big-message"><strong>Coordinate limit:</strong> ${v} combined coordinates. The total must be under 100.</div>`);
+    if (p>LIMIT_POLYGONS) messages.push(`<div class="message bad big-message"><strong>Area limit:</strong> ${p} outputs. The total must be 10 or fewer.</div>`);
   }
-  if (state.files.some(f=>f.status==='unsupported')) messages.push('<div class="message warn"><strong>Unreadable file present:</strong> this file type cannot be checked by this standalone tool.</div>');
-  if (state.files.some(f=>['ok','converted'].includes(f.status) && !AUSALERT_UPLOAD_EXTS.has(f.ext))) messages.push('<div class="message warn big-message"><strong>Format warning:</strong> one or more files are checking-only formats. The fix step will create KML.</div>');
-  if (state.files.some(f=>f.status==='converted')) messages.push('<div class="message warn"><strong>Converted file present:</strong> conversion is experimental. Export and check the result before AusAlert use.</div>');
+  compatibilityProblemRecords().forEach(file=>{
+    const c=file.compatibility||{};
+    messages.push(`<div class="message ${c.fixable?'warn':'bad'} big-message"><strong>${escapeHtml(file.name)}:</strong> ${escapeHtml(c.message||'File compatibility issue detected.')}${c.fixable?' The app can fix this automatically.':''}</div>`);
+  });
+  if (state.polygons.length && v<LIMIT_VERTICES && p<=LIMIT_POLYGONS && !assessment.needed && !invalidAssessment.invalid && !hasAusAlertFormatProblem() && !hasUnreadableProblem()){
+    messages.push('<div class="message good big-message"><strong>Pass:</strong> no issues were detected.</div>');
+  }
   els.limitMessages.innerHTML=messages.join('');
 }
 function fileCardsHtml({allowRemove=false, compactUpload=false}={}){
@@ -1263,22 +1529,21 @@ function fileCardsHtml({allowRemove=false, compactUpload=false}={}){
   return state.files.map((file,index)=>{
     const vertices=totalVertices(file.polygons||[]), polys=polygonCount(file.polygons||[]), geomProblems=geometryIssueCount(file.polygons||[]);
     const invalidGeometry=invalidGeometryAssessment(file.polygons||[]).invalid;
-    const isAusAlertFormat=AUSALERT_UPLOAD_EXTS.has(file.ext), isReadable=['ok','converted'].includes(file.status);
-    const statusClass=isReadable?(geomProblems?'bad':(isAusAlertFormat?'ok':'warn')):(file.status==='unsupported'?'warn':'bad');
-    const cardClass=geomProblems?' error':(file.status==='unsupported'||file.status==='converted'||(isReadable&&!isAusAlertFormat)?' unsupported':(file.status==='error'?' error':''));
-    const statusText=geomProblems?'GEOMETRY FIX':file.status==='ok'?(isAusAlertFormat?'AUSALERT FORMAT':'CHECKING ONLY'):file.status==='converted'?'CONVERTED':file.status==='unsupported'?'UNREADABLE':file.status==='loading'?'READING':'ERROR';
+    const isReadable=['ok','converted'].includes(file.status), compatible=isReadable&&fileUploadReady(file);
+    const compatProblem=isReadable&&!compatible;
+    const statusClass=isReadable?(geomProblems||invalidGeometry?'bad':(compatible?'ok':'warn')):(file.status==='unsupported'?'warn':'bad');
+    const cardClass=(geomProblems||invalidGeometry)?' error':(compatProblem||file.status==='unsupported'||file.status==='converted'?' unsupported':(file.status==='error'?' error':''));
+    const statusText=geomProblems||invalidGeometry?'NEEDS FIX':file.status==='ok'?(compatible?'READY':'ISSUE FOUND'):file.status==='converted'?'CONVERTED':file.status==='unsupported'?'UNREADABLE':file.status==='loading'?'READING':'ERROR';
     const removeButton=allowRemove?`<button class="remove-file-btn" onclick="removeFile(${index})">Remove</button>`:'';
     const conversionError=file.convertAttempt?`<div class="message bad">${escapeHtml(file.convertAttempt)}</div>`:'';
     const geometryMessage=geomProblems
-      ? (invalidGeometry
-        ? `${geomProblems} geometr${geomProblems===1?'y':'ies'} contain a degenerate or self-intersecting path and fail the AusAlert check.`
-        : `${geomProblems} LineString or unclosed polygon geometr${geomProblems===1?'y':'ies'} detected. It will remain open on the map until repaired.`)
+      ? (invalidGeometry?`${geomProblems} geometr${geomProblems===1?'y':'ies'} contain invalid paths.`:`${geomProblems} open geometr${geomProblems===1?'y':'ies'} detected.`)
       : '';
+    const message=geometryMessage || file.message || '';
     if (compactUpload){
-      const message=file.status==='loading'?'Reading file…':file.status==='unsupported'?'This file type cannot be checked directly here.':file.status==='error'?(file.message||'Could not read this file.'):geometryMessage||(file.status==='ok'&&!isAusAlertFormat?'Readable for checking, but the final export must be KML.':'');
-      return `<div class="file-card upload-compact${cardClass}"><div class="upload-file-main"><div class="file-name">${escapeHtml(file.name)}</div><div class="file-meta">.${escapeHtml(file.ext)} · ${formatBytes(file.size)}</div></div><div class="mini"><div class="mini-label">Vertices</div><div class="mini-value">${vertices||'—'}</div></div><div class="mini"><div class="mini-label">Outputs</div><div class="mini-value">${polys||'—'}</div></div><div class="file-actions">${removeButton}</div>${message?`<div class="upload-message">${escapeHtml(message)}</div>`:''}${conversionError}</div>`;
+      return `<div class="file-card upload-compact${cardClass}"><div class="upload-file-main"><div class="file-name">${escapeHtml(file.name)}</div><div class="file-meta">.${escapeHtml(file.ext)} · ${formatBytes(file.size)}</div></div><div class="mini"><div class="mini-label">Coordinates</div><div class="mini-value">${vertices||'—'}</div></div><div class="mini"><div class="mini-label">Areas</div><div class="mini-value">${polys||'—'}</div></div><div class="file-actions">${removeButton}</div>${message?`<div class="upload-message">${escapeHtml(message)}</div>`:''}${conversionError}</div>`;
     }
-    return `<div class="file-card${cardClass}"><div class="file-top"><div><div class="file-name">${escapeHtml(file.name)}</div><div class="file-meta">.${escapeHtml(file.ext)} · ${formatBytes(file.size)}</div></div><span class="file-status ${statusClass}">${statusText}</span></div><div class="file-body"><div class="mini-grid"><div class="mini"><div class="mini-label">Vertices</div><div class="mini-value">${vertices||'—'}</div></div><div class="mini"><div class="mini-label">Outputs</div><div class="mini-value">${polys||'—'}</div></div></div><div class="hint">${escapeHtml(geometryMessage||file.message||'')}</div><div class="file-actions">${removeButton}</div>${conversionError}</div></div>`;
+    return `<div class="file-card${cardClass}"><div class="file-top"><div><div class="file-name">${escapeHtml(file.name)}</div><div class="file-meta">.${escapeHtml(file.ext)} · ${formatBytes(file.size)}</div></div><span class="file-status ${statusClass}">${statusText}</span></div><div class="file-body"><div class="mini-grid"><div class="mini"><div class="mini-label">Coordinates</div><div class="mini-value">${vertices||'—'}</div></div><div class="mini"><div class="mini-label">Areas</div><div class="mini-value">${polys||'—'}</div></div></div><div class="hint">${escapeHtml(message)}</div><div class="file-actions">${removeButton}</div>${conversionError}</div></div>`;
   }).join('');
 }
 function renderFileList(){
@@ -1432,9 +1697,15 @@ function renderMapSlot(id, target, polygons, opts={}){
   polygons.forEach((poly) => {
     const needsFix=geometryNeedsFix(poly);
     const flags=poly.ringClosed||poly.rings.map(()=>true);
+    if (poly.geometryType==='circle'){
+      const layer=L.circle([poly.center[1],poly.center[0]],{radius:poly.radiusMetres,color:colour,weight:3,fillColor:colour,fillOpacity:0.22,opacity:0.95});
+      layer.bindTooltip(`${poly.sourceFile || 'GML'} · true circle · ${(poly.radiusMetres/1000).toFixed(2)} km radius`,{sticky:true});
+      slot.layer.addLayer(layer);
+      return;
+    }
     if (!needsFix){
       const layer=L.polygon(polygonToLatLngs(poly), {color:colour,weight:3,fillColor:colour,fillOpacity:0.22,opacity:0.95});
-      layer.bindTooltip(`${poly.sourceFile || 'Polygon'} · ${polygonVertexCount(poly)} vertices`, {sticky:true});
+      layer.bindTooltip(`${poly.sourceFile || 'Polygon'} · ${polygonVertexCount(poly)} coordinates`, {sticky:true});
       slot.layer.addLayer(layer);
       return;
     }
@@ -1486,12 +1757,16 @@ function renderPreviews(){
   if (current==='results') safeRenderMapSlot('result',els.resultMap,state.polygons,{empty:'Geometry map will appear after upload.',bboxPolygons:shared,fill:'rgba(22,100,214,.12)',stroke:'#1664d6'});
   if (current==='compare'){
     safeRenderMapSlot('original',els.originalPreview,state.polygons,{empty:'Original geometry will appear here.',bboxPolygons:shared,fill:'rgba(22,100,214,.12)',stroke:'#1664d6'});
-    safeRenderMapSlot('simplified',els.simplifiedPreview,state.simplifiedPolygons,{empty:'The fixed KML output will appear here.',bboxPolygons:shared,fill:'rgba(217,44,50,.12)',stroke:'#d92c32'});
+    safeRenderMapSlot('simplified',els.simplifiedPreview,state.simplifiedPolygons,{empty:'Fixed output will appear here.',bboxPolygons:shared,fill:'rgba(217,44,50,.12)',stroke:'#d92c32'});
   }
-  const originalSummary=state.polygons.length?`${totalVertices(state.polygons)} vertices · ${polygonCount(state.polygons)} output${polygonCount(state.polygons)===1?'':'s'}${geometryIssueCount(state.polygons)?` · ${geometryIssueCount(state.polygons)} need repair`:''}`:'Original geometry';
+  const circles=state.polygons.filter(p=>p.geometryType==='circle').length;
+  const originalSummary=state.polygons.length?`${totalVertices(state.polygons)} coordinates · ${polygonCount(state.polygons)} area${polygonCount(state.polygons)===1?'':'s'}${circles?` · ${circles} true circle${circles===1?'':'s'}`:''}${geometryIssueCount(state.polygons)?` · ${geometryIssueCount(state.polygons)} need repair`:''}`:'Original geometry';
   if (els.resultMapMeta) els.resultMapMeta.textContent=originalSummary;
   els.originalMeta.textContent=state.polygons.length?originalSummary:'Nothing loaded';
-  els.simplifiedMeta.textContent=state.simplifiedPolygons.length?`${totalVertices(state.simplifiedPolygons)} vertices · ${polygonCount(state.simplifiedPolygons)} closed polygon${polygonCount(state.simplifiedPolygons)===1?'':'s'}${state.fixedAction?` · ${state.fixedAction}`:''}`:'Not created';
+  els.simplifiedMeta.textContent=state.simplifiedPolygons.length?`${totalVertices(state.simplifiedPolygons)} coordinates · ${polygonCount(state.simplifiedPolygons)} area${polygonCount(state.simplifiedPolygons)===1?'':'s'}${state.fixedAction?` · ${state.fixedAction}`:''}`:'Not created';
+  if (els.exportSimplifiedKmlBtn){
+    els.exportSimplifiedKmlBtn.textContent=state.fixedOutputFormat==='gml'?'Download GML':'Download KML';
+  }
 }
 function renderDetailTable(){
   if (!state.polygons.length){ els.detailTable.innerHTML='No geometry detail yet.'; return; }
@@ -1499,13 +1774,16 @@ function renderDetailTable(){
     const v=polygonVertexCount(poly), assessment=geometryNeedsFix(poly)?validateGeometryForClosure(poly):{fixable:true};
     let status='<span class="status-pill good">ok</span>';
     if (!assessment.fixable) status='<span class="status-pill bad">invalid geometry</span>';
-    else if (geometryNeedsFix(poly)) status='<span class="status-pill warn">needs polygon repair</span>';
+    else if (geometryNeedsFix(poly)) status='<span class="status-pill warn">needs repair</span>';
     else if (v>=LIMIT_VERTICES) status='<span class="status-pill bad">large</span>';
-    return `<tr><td>${i+1}</td><td>${escapeHtml(poly.sourceFile)}</td><td>${escapeHtml(poly.format)}</td><td>${escapeHtml(geometryTypeLabel(poly))}</td><td>${v}</td><td>${poly.rings.length}</td><td>${status}</td></tr>`;
+    const extra=poly.geometryType==='circle'?` · ${(poly.radiusMetres/1000).toFixed(2)} km radius`:'';
+    return `<tr><td>${i+1}</td><td>${escapeHtml(poly.sourceFile)}</td><td>${escapeHtml(poly.format)}</td><td>${escapeHtml(geometryTypeLabel(poly)+extra)}</td><td>${v}</td><td>${poly.geometryType==='circle'?'—':poly.rings.length}</td><td>${status}</td></tr>`;
   }).join('');
-  els.detailTable.innerHTML=`<table class="table"><thead><tr><th>#</th><th>File</th><th>Format</th><th>Geometry</th><th>Vertices</th><th>Paths/rings</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`;
+  els.detailTable.innerHTML=`<table class="table"><thead><tr><th>#</th><th>File</th><th>Format</th><th>Geometry</th><th>Coordinates</th><th>Paths/rings</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
-function hasAusAlertFormatProblem(){ return state.files.some(f=>['ok','converted'].includes(f.status)&&!AUSALERT_UPLOAD_EXTS.has(f.ext)); }
+function hasAusAlertFormatProblem(){
+  return compatibilityProblemRecords().length>0;
+}
 function hasUnreadableProblem(){ return state.files.some(f=>f.status==='unsupported'||f.status==='error'); }
 function hasGeometryFixProblem(){ return state.polygons.some(geometryNeedsFix); }
 function hasInvalidGeometryProblem(){ return invalidGeometryAssessment().invalid; }
@@ -1534,48 +1812,67 @@ function renderActionFlow(){
   const formatFail=hasAusAlertFormatProblem(), unreadableFail=hasUnreadableProblem(), geometryFail=hasGeometryFixProblem();
   const assessment=geometryFixAssessment(), invalidAssessment=invalidGeometryAssessment();
   const invalidFail=invalidAssessment.invalid;
-  const blocked=polygonFail||unreadableFail||invalidFail;
+  const compatProblems=compatibilityProblemRecords(), fixableCompat=compatProblems.length>0&&compatProblems.every(f=>f.compatibility?.fixable);
+  const unfixableCompat=compatProblems.some(f=>!f.compatibility?.fixable);
+  const circleVertexFail=vertexFail&&state.polygons.some(p=>p.geometryType==='circle');
+  const blocked=polygonFail||unreadableFail||invalidFail||unfixableCompat||circleVertexFail;
   els.passExportBox.classList.toggle('hidden',!(pass&&current==='results'));
   els.nextActionBox.classList.toggle('hidden',!(fail&&current==='results'));
   if (fail){
     const reasons=[];
-    if (geometryFail) reasons.push(assessment.fixable?'connect open geometry into closed polygons':'repair geometry that cannot safely be auto-connected');
-    if (invalidFail) reasons.push('repair degenerate or self-intersecting paths');
-    if (vertexFail) reasons.push('reduce the vertex count');
-    if (polygonFail) reasons.push('reduce the number of polygon outputs');
-    if (formatFail) reasons.push('convert to AusAlert KML');
+    if (geometryFail) reasons.push(assessment.fixable?'repair open geometry':'repair invalid geometry');
+    if (vertexFail) reasons.push('reduce the coordinate count');
+    if (polygonFail) reasons.push('reduce the number of areas');
+    if (formatFail) reasons.push(fixableCompat?'fix the file format':'replace or externally convert a file');
     if (unreadableFail) reasons.push('remove or replace unreadable files');
     els.nextActionText.textContent=`This needs a fix: ${reasons.join(' and ')}.`;
   }
   els.connectGeometryBlock.classList.toggle('hidden',!geometryFail||blocked);
   if (geometryFail&&!blocked){
     if (vertexFail){
-      els.connectGeometryTitle.textContent='Connect and simplify into AusAlert polygons';
-      els.connectGeometryText.textContent='Each separate line or open ring will be closed independently, then the combined output will be simplified to fewer than 100 vertices and converted to KML.';
-      els.connectGeometryBtn.textContent='⚠️ Connect, simplify and convert to KML';
+      els.connectGeometryTitle.textContent='Connect and reduce the geometry';
+      els.connectGeometryText.textContent='The open geometry will be closed, then reduced to fewer than 100 coordinates.';
+      els.connectGeometryBtn.textContent='⚠️ Connect and reduce';
     } else {
-      els.connectGeometryTitle.textContent='Connect geometry into AusAlert polygons';
-      els.connectGeometryText.textContent='Each final coordinate will be connected directly to its own first coordinate. Separate LineStrings remain separate polygon outputs.';
-      els.connectGeometryBtn.textContent='Connect and convert to KML →';
+      els.connectGeometryTitle.textContent='Connect open geometry';
+      els.connectGeometryText.textContent='Each open path will be closed with one straight segment and checked again.';
+      els.connectGeometryBtn.textContent='Connect and fix →';
     }
   }
-  els.simplifyBlock.classList.toggle('hidden',!vertexFail||polygonFail||geometryFail||invalidFail||unreadableFail);
-  els.convertFormatBlock.classList.toggle('hidden',!formatFail||vertexFail||polygonFail||geometryFail||invalidFail||unreadableFail);
+  els.simplifyBlock.classList.toggle('hidden',!vertexFail||polygonFail||geometryFail||invalidFail||unreadableFail||unfixableCompat);
+  els.convertFormatBlock.classList.toggle('hidden',!formatFail||!fixableCompat||vertexFail||polygonFail||geometryFail||invalidFail||unreadableFail);
+  if (formatFail&&fixableCompat){
+    const first=compatProblems[0]?.compatibility;
+    const gmlOnly=compatProblems.every(f=>f.compatibility?.kind==='gml-circle');
+    const kmlOnly=compatProblems.every(f=>f.compatibility?.kind==='kml');
+    const title=els.convertFormatBlock.querySelector('.action-title');
+    const copy=els.convertFormatBlock.querySelector('.action-text');
+    if (title) title.textContent=gmlOnly?'Fix GML circle':kmlOnly?'Clean and fix KML':'Convert to a compatible file';
+    if (copy) copy.textContent=gmlOnly?'The centre and radius will be preserved while the GML structure is corrected.':kmlOnly?'Problematic metadata will be removed and a clean KML 2.2 copy will be created.':'A clean KML copy will be created without changing the geometry.';
+    els.convertKmlBtn.textContent=gmlOnly?'Fix GML →':kmlOnly?'Clean KML →':'Convert to KML →';
+  }
   els.fixPolygonCountBlock.classList.toggle('hidden',!blocked);
   if (blocked){
-    if (unreadableFail){ els.fixCannotTitle.textContent='Remove unreadable files first'; els.fixCannotText.textContent='The batch contains a file that could not be read. Remove or replace it before creating a combined fixed output.'; }
-    else if (polygonFail){ els.fixCannotTitle.textContent='Too many separate polygon outputs'; els.fixCannotText.textContent='This tool cannot safely reduce the number of individual polygons. AusAlert allows 10 or fewer. Merge or delete source geometry in the polygon editor, then upload it again.'; }
-    else { els.fixCannotTitle.textContent='This geometry cannot safely form an AusAlert polygon'; els.fixCannotText.textContent=invalidAssessment.failures.join('; ')+'. Repair the source geometry manually, then upload it again.'; }
+    if (unreadableFail){ els.fixCannotTitle.textContent='Remove unreadable files first'; els.fixCannotText.textContent='One file could not be read. Remove or replace it, then check again.'; }
+    else if (unfixableCompat){ const f=compatProblems.find(x=>!x.compatibility?.fixable); els.fixCannotTitle.textContent='This file needs an external fix'; els.fixCannotText.textContent=f?.compatibility?.message||'The app cannot safely correct this file automatically.'; }
+    else if (circleVertexFail){ els.fixCannotTitle.textContent='Coordinate limit needs a manual geometry edit'; els.fixCannotText.textContent='A true circle is present, so the app will not convert or simplify it into a polygon automatically. Reduce the other geometry while keeping the true circle intact, then upload again.'; }
+    else if (polygonFail){ els.fixCannotTitle.textContent='Too many separate areas'; els.fixCannotText.textContent='This tool cannot safely decide which areas should be merged or removed. Reduce the number to 10 or fewer, then upload again.'; }
+    else { els.fixCannotTitle.textContent='This geometry cannot be fixed safely'; els.fixCannotText.textContent=invalidAssessment.failures.join('; ')+'. Repair the source geometry manually, then upload it again.'; }
   }
 }
 function renderButtons(){
   const hasPolys=state.polygons.length>0, current=currentWizardStep(), assessment=geometryFixAssessment();
   const vertexFail=hasPolys&&totalVertices(state.polygons)>=LIMIT_VERTICES, polygonFail=hasPolys&&polygonCount(state.polygons)>LIMIT_POLYGONS;
   const unreadable=hasUnreadableProblem(), geometryFail=assessment.needed, invalidFail=invalidGeometryAssessment().invalid;
-  els.exportOriginalKmlBtn.disabled=!isLimitPass();
+  const hasCircle=state.polygons.some(p=>p.geometryType==='circle');
+  els.exportOriginalKmlBtn.disabled=!isLimitPass() || hasCircle;
+  els.exportOriginalKmlBtn.classList.toggle('hidden',isLimitPass()&&hasCircle);
   if (els.exportOriginalCompareKmlBtn) els.exportOriginalCompareKmlBtn.disabled=!isLimitPass();
-  const needsSimplify=hasPolys&&vertexFail&&!polygonFail&&!geometryFail&&!invalidFail&&!unreadable;
-  const needsFormatConvert=hasPolys&&hasAusAlertFormatProblem()&&!vertexFail&&!polygonFail&&!geometryFail&&!invalidFail&&!unreadable;
+  const compat=compatibilityProblemRecords(), fixableCompat=compat.length>0&&compat.every(f=>f.compatibility?.fixable);
+  const unfixableCompat=compat.some(f=>!f.compatibility?.fixable);
+  const circleVertexFail=vertexFail&&state.polygons.some(p=>p.geometryType==='circle');
+  const needsSimplify=hasPolys&&vertexFail&&!circleVertexFail&&!polygonFail&&!geometryFail&&!invalidFail&&!unreadable&&!unfixableCompat;
+  const needsFormatConvert=hasPolys&&hasAusAlertFormatProblem()&&fixableCompat&&!vertexFail&&!polygonFail&&!geometryFail&&!invalidFail&&!unreadable;
   els.simplifyBtn.disabled=!needsSimplify;
   els.convertKmlBtn.disabled=!needsFormatConvert;
   els.connectGeometryBtn.disabled=!(geometryFail&&assessment.fixable&&!invalidFail&&!polygonFail&&!unreadable);
@@ -1607,16 +1904,29 @@ function ringToKml(ring, tag){
   return `<innerBoundaryIs><LinearRing><coordinates>${coords}</coordinates></LinearRing></innerBoundaryIs>`;
 }
 function polygonsToKml(polygons, docName){
+  if ((polygons || []).some(p=>p.geometryType==='circle')) throw new Error('True GML circles are not converted to polygon KML automatically.');
   if ((polygons || []).some(geometryNeedsFix)) throw new Error('Open LineString or unclosed polygon geometry cannot be exported as polygon KML until it is repaired.');
   const placemarks = polygons.map((poly, idx) => {
     const outer = poly.rings[0] ? ringToKml(poly.rings[0], 'outerBoundaryIs') : '';
     const inners = poly.rings.slice(1).map(r => ringToKml(r, 'innerBoundaryIs')).join('');
     const name = escapeHtml(poly.label || poly.sourceFile || `Polygon ${idx+1}`);
-    const desc = escapeHtml(`${polygonVertexCount(poly)} vertices. Source: ${poly.sourceFile || 'unknown'}.`);
-    return `<Placemark><name>${name}</name><description>${desc}</description><Polygon><tessellate>1</tessellate>${outer}${inners}</Polygon></Placemark>`;
+    return `<Placemark><name>${name}</name><description></description><Polygon><tessellate>1</tessellate>${outer}${inners}</Polygon></Placemark>`;
   }).join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${escapeHtml(docName)}</name>${placemarks}</Document></kml>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="${KML22_NS}"><Document><name>${escapeHtml(docName)}</name><description></description>${placemarks}</Document></kml>`;
 }
+
+function escapeXml(value){
+  return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+}
+function circlesToCompatibleGml(circles, docName='True circles'){
+  const members=(circles||[]).map((circle,index)=>{
+    const id=`circle-${index+1}`;
+    const lon=cleanNumber(circle.center?.[0]), lat=cleanNumber(circle.center?.[1]), radius=cleanNumber(circle.radiusMetres);
+    return `<gml:featureMember><gml:DynamicFeature gml:id="${id}"><gml:name>${escapeXml(circle.label||docName)}</gml:name><gml:location><gml:Curve gml:id="${id}-curve" srsName="${GML_CIRCLE_CRS84}" srsDimension="2" axisLabels="longitude latitude" uomLabels="deg deg"><gml:segments><gml:CircleByCenterPoint numArc="1"><gml:pos>${lon} ${lat}</gml:pos><gml:radius uom="m">${radius}</gml:radius></gml:CircleByCenterPoint></gml:segments></gml:Curve></gml:location></gml:DynamicFeature></gml:featureMember>`;
+  }).join('');
+  return `<?xml version="1.0" encoding="UTF-8"?><gml:FeatureCollection xmlns:gml="${GML32_NS}">${members}</gml:FeatureCollection>`;
+}
+
 function downloadText(filename, text, mime){
   const blob = new Blob([text], {type:mime});
   const url = URL.createObjectURL(blob);
@@ -1638,8 +1948,14 @@ function exportOriginalKml(){
   downloadText(`ausalert_original_polygons_${dateStamp()}.kml`, polygonsToKml(state.polygons, 'AusAlert original polygons'), 'application/vnd.google-earth.kml+xml');
 }
 function exportSimplifiedKml(){
-  if (!fixedOutputPass()) { toast('The fixed output still fails a geometry or AusAlert limit check.'); return; }
-  downloadText(`ausalert_fixed_polygons_${dateStamp()}.kml`, polygonsToKml(state.simplifiedPolygons, 'AusAlert fixed KML polygons'), 'application/vnd.google-earth.kml+xml');
+  if (!fixedOutputPass()) { toast('The fixed output still fails a check.'); return; }
+  if (state.fixedOutputFormat==='gml'){
+    const text=state.fixedOutputText || circlesToCompatibleGml(state.simplifiedPolygons.filter(p=>p.geometryType==='circle'),'True circles');
+    downloadText(state.fixedOutputFilename||`fixed_true_circles_${dateStamp()}.gml`,text,'application/gml+xml');
+    return;
+  }
+  const text=state.fixedOutputText || polygonsToKml(state.simplifiedPolygons,'Fixed polygons');
+  downloadText(state.fixedOutputFilename||`fixed_polygons_${dateStamp()}.kml`,text,'application/vnd.google-earth.kml+xml');
 }
 function exportSimplifiedGeojson(){
   if (!fixedOutputPass()) return;
@@ -1656,6 +1972,9 @@ function clearAll(){
   state.pendingFixMode = null;
   state.fixedAction = '';
   state.fixedOutputValid = false;
+  state.fixedOutputFormat = 'kml';
+  state.fixedOutputText = '';
+  state.fixedOutputFilename = '';
   els.fileInput.value = '';
   rebuildPolygonsFromFiles();
   render();
