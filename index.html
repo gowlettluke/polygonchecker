@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AusAlert Polygon Checker</title>
+<title>AusAlert Polygon Limit Checker</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
 :root{
@@ -37,7 +37,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
 
 <div class="app" id="app">
   <header class="topbar">
-    <div class="title">AusAlert Polygon Checker<small></small></div>
+    <div class="title">AusAlert Polygon Limit Checker<small>Step by step. Only what is needed.</small></div>
     <div class="spacer"></div>
     <div class="legend"><span class="swatch original"></span>Original <span class="swatch simple"></span>Fixed KML</div>
     <button id="clearBtn">Clear / Start again</button>
@@ -68,7 +68,7 @@ button{min-height:44px;border:1px solid var(--line);border-radius:12px;backgroun
             </div>
           </div>
         </div>
-        <div class="upload-only-note"></div>
+        <div class="upload-only-note">Only this upload step appears first. Add all required files, then continue.</div>
       </div>
     </section>
 
@@ -605,6 +605,87 @@ function parseShapefilePackage(buffer, filename){
   if (!shpName) throw new Error('No .shp file was found in this ZIP.');
   return parseShp(bytesToArrayBuffer(entries[shpName]),`${filename} / ${shpName}`).map(p=>({...p,format:'ZIP/SHP'}));
 }
+function directChildrenByLocalName(node, wanted){
+  const names=Array.isArray(wanted)?wanted:[wanted];
+  const set=new Set(names.map(name=>String(name).toLowerCase()));
+  return Array.from(node?.children||[]).filter(child=>set.has(localName(child).toLowerCase()));
+}
+function kmlNodeIs22(node){
+  return !!node && node.namespaceURI===KML22_NS;
+}
+function kmlGeometryIsInPlacemark(node){
+  let parent=node?.parentElement||null;
+  while (parent && localName(parent)!=='Placemark'){
+    if (localName(parent)!=='MultiGeometry' || !kmlNodeIs22(parent)) return false;
+    parent=parent.parentElement;
+  }
+  return !!parent && kmlNodeIs22(parent);
+}
+function assessKmlGeometryStructure(doc){
+  const issues=[];
+  let safeToClean=true;
+  const addIssue=(message,safe=true)=>{
+    if (!issues.includes(message)) issues.push(message);
+    if (!safe) safeToClean=false;
+  };
+
+  descendantsByLocalName(doc,'Polygon').forEach((polygon,index)=>{
+    const label=`Polygon ${index+1}`;
+    if (!kmlNodeIs22(polygon)) addIssue(`${label} is not in the KML 2.2 namespace.`);
+    if (!kmlGeometryIsInPlacemark(polygon)) addIssue(`${label} is not placed directly in a Placemark or MultiGeometry.`);
+
+    const outers=directChildrenByLocalName(polygon,'outerBoundaryIs');
+    const inners=directChildrenByLocalName(polygon,'innerBoundaryIs');
+    if (outers.length!==1) addIssue(`${label} must contain exactly one outer boundary.`,false);
+
+    const validCoordinateNodes=[];
+    const boundaries=[
+      ...outers.map(node=>({node,name:'outer boundary'})),
+      ...inners.map((node,i)=>({node,name:`inner boundary ${i+1}`}))
+    ];
+    boundaries.forEach(({node:boundary,name})=>{
+      if (!kmlNodeIs22(boundary)) addIssue(`${label} ${name} is not in the KML 2.2 namespace.`);
+      const rings=directChildrenByLocalName(boundary,'LinearRing');
+      if (rings.length!==1){
+        addIssue(`${label} ${name} must contain exactly one LinearRing.`,false);
+        return;
+      }
+      const ring=rings[0];
+      if (!kmlNodeIs22(ring)) addIssue(`${label} ${name} LinearRing is not in the KML 2.2 namespace.`);
+      const coordinates=directChildrenByLocalName(ring,'coordinates');
+      if (coordinates.length!==1){
+        addIssue(`${label} ${name} must contain exactly one coordinates element.`,false);
+        return;
+      }
+      const coordinateNode=coordinates[0];
+      validCoordinateNodes.push(coordinateNode);
+      if (!kmlNodeIs22(coordinateNode)) addIssue(`${label} ${name} coordinates are not in the KML 2.2 namespace.`);
+      if (!parseCoordinateTuples(directText(coordinateNode)).length) addIssue(`${label} ${name} has no readable coordinates.`,false);
+    });
+
+    const allCoordinateNodes=descendantsByLocalName(polygon,'coordinates');
+    if (allCoordinateNodes.some(node=>!validCoordinateNodes.includes(node))){
+      addIssue(`${label} contains coordinates outside a valid LinearRing boundary.`,false);
+    }
+  });
+
+  descendantsByLocalName(doc,'LineString').forEach((line,index)=>{
+    const label=`LineString ${index+1}`;
+    if (!kmlNodeIs22(line)) addIssue(`${label} is not in the KML 2.2 namespace.`);
+    if (!kmlGeometryIsInPlacemark(line)) addIssue(`${label} is not placed directly in a Placemark or MultiGeometry.`);
+    const coordinates=directChildrenByLocalName(line,'coordinates');
+    if (coordinates.length!==1){
+      addIssue(`${label} must contain exactly one coordinates element.`,false);
+    } else {
+      if (!kmlNodeIs22(coordinates[0])) addIssue(`${label} coordinates are not in the KML 2.2 namespace.`);
+      if (!parseCoordinateTuples(directText(coordinates[0])).length) addIssue(`${label} has no readable coordinates.`,false);
+      const allCoordinateNodes=descendantsByLocalName(line,'coordinates');
+      if (allCoordinateNodes.some(node=>node!==coordinates[0])) addIssue(`${label} contains coordinates in an invalid nested structure.`,false);
+    }
+  });
+
+  return {issues,safeToClean};
+}
 function assessKmlCompatibility(text, filename){
   const issues=[];
   const parsed=parseKmlXmlRecoverable(text);
@@ -620,9 +701,11 @@ function assessKmlCompatibility(text, filename){
   if (descriptions.some(node=>directText(node)!=='' || node.children.length>0)) issues.push('KML description content must be empty.');
   const names=descendantsByLocalName(doc,'name').map(directText).filter(Boolean);
   if (!names.length) issues.push('KML has no usable name.');
+  const structure=assessKmlGeometryStructure(doc);
+  structure.issues.forEach(issue=>{ if (!issues.includes(issue)) issues.push(issue); });
   return {
     ok:issues.length===0,
-    fixable:true,
+    fixable:structure.safeToClean,
     kind:'kml',
     message:issues.length?'This KML needs cleaning before it is ready to use.':'KML format checks passed.',
     details:issues,
@@ -1383,7 +1466,13 @@ function convertToKmlCopy(){
   state.fixedOutputText=polygonsToKml(state.simplifiedPolygons,'Fixed polygons');
   state.fixedOutputFilename=`fixed_polygons_${dateStamp()}.kml`;
   state.fixedAction = problems.some(f=>f.compatibility?.kind==='kml') ? 'KML cleaned and corrected' : 'Converted to KML';
-  state.fixedOutputValid = true;
+  const outputCheck=assessKmlCompatibility(state.fixedOutputText,state.fixedOutputFilename);
+  state.fixedOutputValid=outputCheck.ok;
+  if (!state.fixedOutputValid){
+    toast('The cleaned KML still fails a compatibility check and was not marked ready.');
+    render();
+    return;
+  }
   state.stage = 'compare';
   toast(`${state.fixedAction}. Check the shape before use.`);
   render();
@@ -1552,11 +1641,18 @@ function createFixedOutput(mode){
     return;
   }
   state.simplifiedPolygons=output;
-  state.fixedOutputValid=!impossible && totalVertices(output)<LIMIT_VERTICES && polygonCount(output)<=LIMIT_POLYGONS;
   state.fixedAction=connect && simplify ? 'Connected and simplified' : connect ? 'Connected to polygon' : 'Simplified';
   state.fixedOutputFormat='kml';
   state.fixedOutputText=polygonsToKml(output,'Fixed polygons');
   state.fixedOutputFilename=`fixed_polygons_${dateStamp()}.kml`;
+  const outputCheck=assessKmlCompatibility(state.fixedOutputText,state.fixedOutputFilename);
+  state.fixedOutputValid=!impossible && totalVertices(output)<LIMIT_VERTICES && polygonCount(output)<=LIMIT_POLYGONS && outputCheck.ok;
+  if (!outputCheck.ok){
+    toast('The generated KML still fails a compatibility check and was not marked ready.');
+    state.stage='fix';
+    render();
+    return;
+  }
   state.stage='compare';
   if (impossible) toast('Even the most aggressive reduction cannot get this output below 100 vertices because there are too many rings or required triangle vertices.');
   else if (simplify) toast(`${state.fixedAction}: ${originalVertices} to ${totalVertices(output)} vertices. Check the changed shape before use.`);
