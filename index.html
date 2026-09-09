@@ -447,12 +447,22 @@ function ringSignedArea(path){
   return area / 2;
 }
 function orientation(a,b,c){
-  const value = (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]);
-  if (Math.abs(value) < 1e-12) return 0;
-  return value > 0 ? 1 : -1;
+  const abx=b[0]-a[0], aby=b[1]-a[1];
+  const acx=c[0]-a[0], acy=c[1]-a[1];
+  const p1=abx*acy, p2=aby*acx;
+  const value=p1-p2;
+  // Use a scale-aware floating-point error bound. A fixed degree-based epsilon
+  // incorrectly classifies very close, nearly parallel AusAlert boundary
+  // segments as collinear/intersecting.
+  const errorBound=Number.EPSILON*64*(Math.abs(p1)+Math.abs(p2));
+  if (Math.abs(value)<=errorBound) return 0;
+  return value>0?1:-1;
 }
 function pointOnSegment(p,a,b){
-  return orientation(a,b,p) === 0 && p[0] >= Math.min(a[0],b[0])-1e-12 && p[0] <= Math.max(a[0],b[0])+1e-12 && p[1] >= Math.min(a[1],b[1])-1e-12 && p[1] <= Math.max(a[1],b[1])+1e-12;
+  if (orientation(a,b,p)!==0) return false;
+  const scale=Math.max(1,Math.abs(a[0]),Math.abs(a[1]),Math.abs(b[0]),Math.abs(b[1]),Math.abs(p[0]),Math.abs(p[1]));
+  const tolerance=Number.EPSILON*64*scale;
+  return p[0]>=Math.min(a[0],b[0])-tolerance && p[0]<=Math.max(a[0],b[0])+tolerance && p[1]>=Math.min(a[1],b[1])-tolerance && p[1]<=Math.max(a[1],b[1])+tolerance;
 }
 function segmentsIntersect(a,b,c,d){
   const o1 = orientation(a,b,c), o2 = orientation(a,b,d), o3 = orientation(c,d,a), o4 = orientation(c,d,b);
@@ -699,8 +709,6 @@ function assessKmlCompatibility(text, filename){
   if (/\bjavascript\b/i.test(text) || /<\s*script\b/i.test(text) || /\binner\s*HTML\b/i.test(text)) issues.push('KML contains script-like content that can be blocked during upload.');
   const descriptions=descendantsByLocalName(doc,'description');
   if (descriptions.some(node=>directText(node)!=='' || node.children.length>0)) issues.push('KML description content must be empty.');
-  const names=descendantsByLocalName(doc,'name').map(directText).filter(Boolean);
-  if (!names.length) issues.push('KML has no usable name.');
   const structure=assessKmlGeometryStructure(doc);
   structure.issues.forEach(issue=>{ if (!issues.includes(issue)) issues.push(issue); });
   return {
